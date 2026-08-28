@@ -1,0 +1,45 @@
+// --- Theme / Base ---
+$page-bg: #0a0e16;             // deep space navy
+$panel-bg: rgba(24, 30, 43, 0.92);
+$card-bg: #151a26;
+$text-primary: #f4f7fb;
+$text-muted: rgba(255, 255, 255, 0.66);
+$text-faint: rgba(255, 255, 255, 0.5);
+$panel-border: rgba(255, 255, 255, 0.1);
+$accent: #7aa7ff;              // soft science blue
+
+// --- Typography ---
+$font-display: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
+$font-body: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+$font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+// --- Dimensions ---
+$cell-w: 72px;
+$cell-h: 104px;
+$cell-gap: 5px;
+$axis-col-w: 30px;
+$axis-row-h: 30px;
+$panel-pad: 18px;
+$axis-gap: 6px;
+$lan-row-gap: 8px;
+$border-radius: 6px;
+
+// --- Element category gradients ---
+// Maps a category key to a [from, to] color pair. Muted/dark tones (each
+// pair is one hue at two close, low lightness values, like a translucent
+// tint sitting over a near-black background) so white cell text keeps
+// strong contrast instead of washing out against a bright fill.
+$gradients: (
+  "nonmetal":                (#1f4c61, #286480),
+  "halogen":                 (#215e54, #2c7d6f),
+  "diatomic-nonmetal":      (#1d4063, #265482),
+  "noble-gas":              (#3b255b, #4e3177),
+  "alkali-metal":           (#65221b, #852d23),
+  "alkaline-earth-metal":   (#674218, #885820),
+  "metalloid":              (#255b2e, #31773d),
+  "polyatomic-nonmetal":    (#25355b, #314677),
+  "post-transition-metal":  (#63551d, #827026),
+  "transition-metal":       (#5e2140, #7d2c54),
+  "lanthanide":             (#23585c, #2e747a),
+  "actinide":               (#255b44, #31775a),
+);

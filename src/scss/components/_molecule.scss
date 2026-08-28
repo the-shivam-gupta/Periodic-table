@@ -1,0 +1,74 @@
+@use "../utils/_variables" as *;
+
+// --- Molecule visualization ---
+.molecule {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 210px;
+}
+
+.molecule__svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.mol-bond__line {
+  stroke: rgba(255, 255, 255, 0.55);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  opacity: 0;
+}
+
+.mol-atom {
+  opacity: 0;
+}
+
+.mol-atom__ball {
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45));
+}
+
+.mol-symbol {
+  fill: #ffffff;
+  stroke: #0b101a;
+  stroke-width: 3px;
+  paint-order: stroke;
+  font-family: $font-mono;
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0;
+}
+
+.molecule__caption {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 8px;
+
+  .molecule__name {
+    font-family: $font-body;
+    font-size: 16px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .molecule__formula {
+    font-family: $font-mono;
+    font-size: 13px;
+    color: $text-faint;
+  }
+}
+
+.molecule--mini {
+  width: 150px;
+
+  .mol-symbol {
+    font-size: 11px;
+    stroke-width: 3px;
+  }
+
+  .molecule__name {
+    font-size: 14px;
+  }
+}

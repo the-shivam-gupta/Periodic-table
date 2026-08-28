@@ -1,0 +1,27 @@
+// ===== Periodic Table SCSS =====
+// Entry point — imports all partials in dependency order.
+
+// Configuration & utilities
+@use "./utils/_variables";
+@use "./utils/functions";
+@use "./utils/mixins";
+
+// Base & layout
+@use "./base/base";
+
+// Components
+@use "./components/table";
+@use "./components/categories";
+@use "./components/hero";
+@use "./components/search";
+@use "./components/toolbar";
+@use "./components/nav";
+@use "./components/property";
+@use "./components/showcase";
+@use "./components/list";
+@use "./components/game";
+@use "./components/molecule";
+@use "./components/detail-panel";
+@use "./components/atom";
+@use "./components/background";
+@use "./components/preview-card";

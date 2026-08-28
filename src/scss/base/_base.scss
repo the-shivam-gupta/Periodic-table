@@ -1,0 +1,129 @@
+@use "../utils/_variables" as *;
+
+// --- Base resets & app shell ---
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+// --- Global typography scale (fluid) ---
+// Drive every font-size on the site from this consistent scale.
+:root {
+  --text-xs: 0.8125rem; // 13px  — small metadata
+  --text-sm: 0.9375rem; // 15px  — supporting text
+  --text-base: 1rem; // 16px      — default body
+  --text-md: 1.0625rem; // 17px   — emphasized body
+  --text-lg: 1.125rem; // 18px    — list / property values
+  --text-xl: 1.375rem; // 22px    — sub-headings
+  --text-2xl: clamp(1.5rem, 2vw + 0.5rem, 1.875rem); // 24–30  — section/level 2
+  --text-3xl: clamp(1.75rem, 3vw + 0.5rem, 2.625rem); // 28–42  — modal / level 3
+  --text-4xl: clamp(2rem, 4vw + 0.5rem, 3.5rem); // 32–56        — hero / level 1
+}
+
+html {
+  scroll-behavior: auto;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(1100px 700px at 72% -12%, rgba(88, 120, 220, 0.16), transparent 60%),
+    radial-gradient(900px 560px at 8% 108%, rgba(30, 140, 160, 0.13), transparent 55%),
+    linear-gradient(180deg, #0b101a 0%, #0a0e16 60%, #0d1220 100%);
+  background-attachment: fixed;
+  color: $text-primary;
+  font-family: $font-body;
+  font-size: var(--text-base);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(122, 167, 255, 0.35);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app {
+  position: relative;
+  min-height: 100vh;
+  isolation: isolate;
+}
+
+.app-shell {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1760px;
+  margin: 0 auto;
+  padding: 48px 20px 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.app-title {
+  font-family: $font-display;
+  font-weight: 700;
+  font-size: clamp(2.25rem, 5vw + 0.5rem, 3.75rem);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  overflow-wrap: break-word;
+
+  .app-title__dot {
+    color: $accent;
+  }
+}
+
+.footer {
+  margin-top: 36px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  line-height: 1.5;
+  color: $text-faint;
+
+  a {
+    color: rgba(255, 255, 255, 0.62);
+    text-decoration: none;
+
+    &:hover {
+      color: $text-primary;
+    }
+  }
+}
+
+// Respect reduced motion globally for CSS animations/transitions.
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+// User toggle from the toolbar ("Reduce Motion") mirrors the media query.
+html.force-reduced-motion *,
+html.force-reduced-motion *::before,
+html.force-reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}

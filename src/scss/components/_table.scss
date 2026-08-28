@@ -1,0 +1,485 @@
+@use "../utils/_variables" as *;
+@use "../utils/mixins" as *;
+
+// --- Table section & scroll container ---
+.table-section {
+  width: 100%;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
+}
+
+// --- Table panels ---
+.periodic-table {
+  position: relative;
+  width: max-content;
+  margin: 0 auto;
+}
+
+// Property Showcase slot: sits in the empty central region (groups 3–12,
+// periods 1–3) of the 18-column compact table without touching element rows.
+.table-center {
+  position: absolute;
+  top: calc(#{$panel-pad} + #{$axis-row-h} + #{$axis-gap});
+  left: calc(#{$panel-pad} + #{$axis-col-w} + 2 * #{$cell-w} + 2 * #{$cell-gap});
+  width: calc(10 * #{$cell-w} + 9 * #{$cell-gap});
+  height: calc(3 * #{$cell-h} + 2 * #{$cell-gap});
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+  }
+}
+
+.table-panel,
+.table-panel-lan {
+  position: relative;
+  width: max-content;
+  margin: 0 auto;
+  background: $panel-bg;
+  border: 1px solid $panel-border;
+  padding: $panel-pad;
+  border-radius: 14px;
+  box-shadow: 0 30px 60px -34px rgba(0, 0, 0, 0.75);
+}
+
+.table-panel-lan {
+  margin-top: 16px;
+}
+
+// --- Group / Period axis ---
+.table-axis-row {
+  display: flex;
+  gap: $cell-gap;
+  height: $axis-row-h;
+  margin-bottom: $axis-gap;
+}
+
+.axis-corner {
+  width: $axis-col-w;
+  flex: none;
+}
+
+.group-num,
+.period-num,
+.lan-label {
+  font-family: $font-mono;
+  font-size: 12px;
+  color: $text-faint;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.group-num {
+  width: $cell-w;
+  cursor: default;
+  border-radius: 4px;
+  transition: color 0.2s ease, background-color 0.2s ease;
+
+  &:hover {
+    color: $text-primary;
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.period-num {
+  width: $axis-col-w;
+  height: $cell-h;
+  cursor: default;
+  transition: color 0.2s ease, background-color 0.2s ease;
+
+  &:hover {
+    color: $text-primary;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.lan-label {
+  width: $axis-col-w;
+  height: $cell-h;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.lan-caption {
+  height: $axis-row-h;
+  margin-bottom: $axis-gap;
+  display: flex;
+  align-items: center;
+  font-family: $font-mono;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: $text-faint;
+}
+
+.table-row {
+  display: flex;
+  gap: $cell-gap;
+  margin-bottom: $cell-gap;
+}
+
+.blank-cell {
+  width: $cell-w;
+  height: $cell-h;
+  flex: none;
+}
+
+// --- Element cell ---
+.element-cell {
+  position: relative;
+  flex: none;
+  width: $cell-w;
+  height: $cell-h;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: $border-radius;
+  cursor: pointer;
+  z-index: 0;
+  box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  will-change: transform;
+  font-family: $font-body;
+
+  .el-heat {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .el-number {
+    position: absolute;
+    top: 5px;
+    left: 7px;
+    font-family: $font-mono;
+    font-size: 14px;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.88);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  }
+
+  .el-mass {
+    position: absolute;
+    top: 5px;
+    right: 7px;
+    font-family: $font-mono;
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: -0.01em;
+    color: rgba(255, 255, 255, 0.72);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+    pointer-events: none;
+  }
+
+  .el-symbol {
+    font-size: 35px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+  }
+
+  .el-name {
+    font-size: 13.5px;
+    line-height: 1.2;
+    text-align: center;
+    padding: 0 3px;
+    width: 100%;
+    color: rgba(255, 255, 255, 0.92);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+
+    &.is-hidden {
+      display: none;
+    }
+  }
+
+  .el-badge {
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    bottom: 2px;
+    font-size: 10px;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.95);
+    opacity: 0;
+    transform: scale(0.6);
+    pointer-events: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+
+    &.is-shown {
+      opacity: 0.95;
+      transform: scale(1);
+    }
+  }
+
+  // Compact property value shown at the card foot during a Color-by property.
+  .el-value {
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    bottom: 2px;
+    font-family: $font-mono;
+    font-size: 10px;
+    line-height: 1;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.9);
+    pointer-events: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  }
+
+  // Elements without a value for the active property stay transparent.
+  &.is-missing {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    opacity: 0.85;
+  }
+}
+
+// Fallback class for a missing-value card that carries no category gradient.
+.el-void {
+  background: transparent;
+}
+
+// --- Connection crosshair overlay ---
+.connections-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  overflow: visible;
+}
+
+.conn-line {
+  stroke-width: 1;
+  stroke-dasharray: 3 7;
+  opacity: 0;
+  animation: connDraw 0.7s ease forwards;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.35));
+}
+
+.conn-core {
+  opacity: 0;
+  animation: connCore 0.35s 0.2s ease-out forwards;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+}
+
+@keyframes connDraw {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.45;
+  }
+}
+
+@keyframes connCore {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.9;
+  }
+}
+
+// --- "Wide / normal" mode: same 18-column layout, roomier cells ---
+@include media('tablet', 'min') {
+  .periodic-table--wide {
+    .table-panel,
+    .table-panel-lan {
+      padding: 22px;
+    }
+
+    .table-panel-lan {
+      margin-top: 20px;
+    }
+
+    .table-center {
+      top: calc(22px + #{$axis-row-h} + #{$axis-gap});
+      left: calc(22px + 40px + 2 * 84px + 2 * #{$cell-gap});
+      width: calc(10 * 84px + 9 * #{$cell-gap});
+      height: calc(3 * 114px + 2 * #{$cell-gap});
+    }
+
+    .element-cell,
+    .blank-cell {
+      width: 84px;
+      height: 114px;
+    }
+
+    .group-num {
+      width: 84px;
+    }
+
+    .axis-corner {
+      width: 40px;
+    }
+
+    .period-num,
+    .lan-label {
+      width: 40px;
+      height: 114px;
+    }
+
+    .element-cell {
+      .el-number {
+        font-size: 16px;
+      }
+
+      .el-mass {
+        font-size: 11px;
+      }
+
+      .el-symbol {
+        font-size: 39px;
+      }
+
+      .el-name {
+        font-size: 14.5px;
+      }
+    }
+  }
+}
+
+// --- Responsive: shrink cells, keep content scrollable ---
+@include media('tablet') {
+  .table-panel,
+  .table-panel-lan {
+    padding: 10px;
+  }
+
+  .table-center {
+    top: calc(10px + #{$axis-row-h} + #{$axis-gap});
+    left: calc(10px + 26px + 2 * 50px);
+    width: calc(10 * 50px);
+    height: calc(3 * 72px);
+  }
+
+  .element-cell,
+  .blank-cell {
+    width: 50px;
+    height: 72px;
+  }
+
+  .group-num {
+    width: 50px;
+  }
+
+  .axis-corner {
+    width: 26px;
+  }
+
+  .period-num,
+  .lan-label {
+    width: 26px;
+    height: 72px;
+  }
+
+  .element-cell {
+    .el-number {
+      top: 4px;
+      left: 5px;
+      font-size: 12px;
+    }
+    .el-mass {
+      top: 4px;
+      right: 5px;
+      font-size: 9px;
+    }
+    .el-symbol {
+      font-size: 23px;
+    }
+    .el-name {
+      font-size: 11px;
+      -webkit-line-clamp: 2;
+    }
+  }
+
+  .connections-layer {
+    display: none;
+  }
+}
+
+@include media('mobile-sm') {
+  .element-cell,
+  .blank-cell {
+    width: 46px;
+    height: 64px;
+  }
+
+  .group-num {
+    width: 46px;
+  }
+
+  .element-cell {
+    .el-number {
+      top: 3px;
+      left: 4px;
+      font-size: 11px;
+    }
+    .el-mass {
+      display: none; /* cells too narrow on small screens */
+    }
+    .el-symbol {
+      font-size: 20px;
+    }
+    .el-name {
+      font-size: 10px;
+    }
+  }
+
+  .el-badge {
+    display: none;
+  }
+}
+
+// Compact screens: move the Property Showcase above the table instead of
+// squeezing it into the shrunken central hole.
+@media (max-width: 620px) {
+  .periodic-table {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .table-center {
+    position: static;
+    order: -1;
+    height: auto;
+    width: min(100%, 460px);
+    margin: 0 0 16px;
+  }
+}

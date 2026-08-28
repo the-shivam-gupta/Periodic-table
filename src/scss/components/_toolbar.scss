@@ -1,0 +1,381 @@
+@use "../utils/_variables" as *;
+@use "../utils/mixins" as *;
+
+// --- Table control bar (Filter / Color by / More) ---
+.table-controlbar {
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto 14px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toolbar-btn-wrap {
+  position: relative;
+}
+
+.toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: var(--text-sm, 14px);
+  font-family: $font-body;
+  font-weight: 500;
+  line-height: 1.1;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.2s ease, color 0.2s ease, background-color 0.2s ease,
+    border-color 0.2s ease, box-shadow 0.2s ease;
+
+  strong {
+    font-weight: 600;
+  }
+
+  &:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-1px);
+  }
+
+  &.is-open {
+    background: rgba($accent, 0.14);
+    border-color: rgba($accent, 0.55);
+    color: #fff;
+    box-shadow: 0 0 0 3px rgba($accent, 0.15);
+  }
+}
+
+.toolbar-btn__icon {
+  font-size: 15px;
+  flex: none;
+  opacity: 0.85;
+}
+
+.toolbar-btn__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbar-btn__chevron {
+  font-size: 14px;
+  flex: none;
+  opacity: 0.7;
+  transition: transform 0.2s ease;
+}
+
+.toolbar-btn.is-open .toolbar-btn__chevron {
+  transform: rotate(180deg);
+}
+
+// --- Popover ---
+.td-popover {
+  position: fixed;
+  z-index: 90;
+  width: min(320px, calc(100vw - 24px));
+  display: flex;
+  flex-direction: column;
+  max-height: min(480px, calc(100vh - 24px));
+  overflow: hidden;
+  background: rgba(14, 19, 30, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.8);
+  will-change: transform, opacity;
+}
+
+.td-popover__head {
+  padding: 14px 16px 8px;
+  font-family: $font-mono;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: $text-faint;
+}
+
+.td-popover__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 8px 10px;
+
+  &--plain {
+    padding-top: 4px;
+  }
+}
+
+.td-popover__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+// --- Popover search ---
+.td-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 12px 6px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+
+  &:focus-within {
+    border-color: rgba($accent, 0.55);
+    box-shadow: 0 0 0 3px rgba($accent, 0.14);
+  }
+}
+
+.td-search__icon {
+  flex: none;
+  font-size: 14px;
+  color: $text-faint;
+}
+
+.td-search-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: $text-primary;
+  font-family: $font-body;
+  font-size: 15px;
+
+  &::placeholder {
+    color: $text-faint;
+  }
+}
+
+.td-search__clear {
+  display: inline-flex;
+  padding: 2px;
+  border: none;
+  background: transparent;
+  color: $text-muted;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 14px;
+
+  &:hover {
+    color: #fff;
+  }
+}
+
+// --- Popover groups & items ---
+.td-group__title {
+  padding: 12px 8px 6px;
+  font-family: $font-mono;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: $text-faint;
+}
+
+.td-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: $text-muted;
+  font-family: $font-body;
+  font-size: var(--text-sm, 14px);
+  font-weight: 500;
+  line-height: 1.3;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+  }
+
+  &.is-active {
+    background: rgba($accent, 0.13);
+    border-color: rgba($accent, 0.35);
+    color: #fff;
+    font-weight: 600;
+  }
+}
+
+.td-item__label {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.td-item__count {
+  flex: none;
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $text-faint;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
+  padding: 2px 8px;
+  min-width: 24px;
+  text-align: center;
+
+  .td-item.is-active & {
+    color: rgba(255, 255, 255, 0.9);
+  }
+}
+
+.td-item__check {
+  flex: none;
+  font-size: 14px;
+  color: $accent;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+
+  .td-item.is-active & {
+    opacity: 1;
+  }
+}
+
+.td-item__heat {
+  flex: none;
+  width: 34px;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgb(40, 51, 113), rgb(37, 106, 101), rgb(126, 37, 41));
+  opacity: 0.85;
+}
+
+.td-swatch {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 5px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+
+  &--all {
+    background: conic-gradient(
+      from 0deg,
+      #ff6347,
+      #ffa500,
+      #ffd700,
+      #32cd32,
+      #00bfff,
+      #87cefa,
+      #9370db,
+      #00ced1,
+      #ff6347
+    );
+  }
+}
+
+.td-check {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #0b101a;
+  background: transparent;
+  font-size: 12px;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+
+  &.is-checked {
+    background: $accent;
+    border-color: $accent;
+  }
+}
+
+.td-empty {
+  padding: 18px 12px;
+  text-align: center;
+  font-size: 13px;
+  color: $text-faint;
+}
+
+.td-foot-btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: $text-muted;
+  font-size: 13px;
+  font-family: $font-body;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+
+  &:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+}
+
+// --- Status caption ---
+.table-caption {
+  text-align: center;
+  margin: 0 auto 14px;
+  min-height: 18px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: $text-faint;
+  font-family: $font-mono;
+}
+
+// --- Responsive ---
+@include media('tablet') {
+  .table-controlbar {
+    max-width: 100%;
+    padding: 0 12px;
+  }
+
+  .toolbar {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+@include media('mobile') {
+  .toolbar {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .toolbar-btn {
+    justify-content: center;
+    width: 100%;
+    padding: 10px 10px;
+    gap: 6px;
+
+    strong {
+      display: none;
+    }
+  }
+}

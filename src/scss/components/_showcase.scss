@@ -1,0 +1,256 @@
+@use "../utils/_variables" as *;
+@use "../utils/mixins" as *;
+
+// --- Property Showcase (center of the periodic table) ---
+// The selected element as a compact, table-style tile with close annotation
+// pointers. Atomic number + name are annotated on the left; atomic mass, symbol
+// and the selected property on the right. Lines touch the tile directly (no
+// dots, no gaps) and grow in from the tile side on mount.
+
+.showcase {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+
+  &.is-featured {
+    .showcase__tile {
+      box-shadow:
+        0 0 0 1px rgba(122, 167, 255, 0.45),
+        0 0 22px -6px rgba(122, 167, 255, 0.35),
+        0 10px 22px -18px rgba(0, 0, 0, 0.8);
+    }
+  }
+}
+
+// Side columns butt right against the tile so lines reach its edge. A tiny
+// visual separation is provided only by the line itself.
+.showcase__mid {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+}
+
+// --- Annotation primitive: label + a connector line that touches the tile ---
+.showcase-ann {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: $font-mono;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: $text-faint;
+  white-space: nowrap;
+  user-select: none;
+
+  .showcase-ann__label {
+
+    &.is-na {
+      color: rgba(255, 255, 255, 0.5);
+    }
+  }
+
+  .showcase-ann__line {
+    position: relative;
+    flex: none;
+    width: 26px;
+    height: 1px;
+    background: repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.45) 0 5px,
+      transparent 5px 9px
+    );
+  }
+}
+
+// Left annotations: label left, line right (the line end touches the tile).
+.showcase__left .showcase-ann__line {
+  transform-origin: right center;
+}
+// Right annotations: line left (touches the tile), label right.
+.showcase__right .showcase-ann__line {
+  transform-origin: left center;
+}
+
+// --- Left column: Atomic Number (top) + Name, aligned to the tile ---
+// Each annotation is absolutely positioned as a % of the (tile-height) column
+// so its connector line points exactly at the centre of its in-tile target.
+.showcase__left,
+.showcase__right {
+  position: relative;
+  height: 198px; /* matches .showcase__tile height */
+  width: max-content;
+}
+
+.showcase__left {
+  .showcase-ann {
+    justify-content: flex-end;
+  }
+
+  .showcase-ann--num {
+    position: absolute;
+    right: 0;
+    top: 7%; /* aligns with the tile's atomic number */
+  }
+
+  .showcase-ann--name {
+    position: absolute;
+    right: 0;
+    top: 54%; /* aligns with the tile's name */
+  }
+}
+
+// --- Right column: Atomic Mass (top) + Symbol + selected property ---
+.showcase__right {
+  .showcase-ann--mass {
+    position: absolute;
+    left: 0;
+    top: 7%; /* aligns with the tile's atomic mass */
+  }
+
+  .showcase-ann--sym {
+    position: absolute;
+    left: 0;
+    top: 28%; /* aligns with the tile's symbol */
+  }
+
+  .showcase-ann--prop {
+    position: absolute;
+    left: 0;
+    top: 73%; /* aligns with the tile's bottom value */
+  }
+}
+
+// --- Center element tile (bigger text, well spaced) ---
+.showcase__tile {
+  position: relative;
+  width: 158px;
+  height: 196px;
+  padding: 12px 10px;
+  border-radius: $border-radius;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 12px 26px -18px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  will-change: transform;
+
+  &.is-missing {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    opacity: 0.92;
+  }
+
+  .showcase__num {
+    position: absolute;
+    top: 11px;
+    left: 12px;
+    font-family: $font-mono;
+    font-size: 16px;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  }
+
+  .showcase__mass {
+    position: absolute;
+    top: 11px;
+    right: 12px;
+    font-family: $font-mono;
+    font-size: 12px;
+    line-height: 1.1;
+    text-align: right;
+    letter-spacing: -0.01em;
+    color: rgba(255, 255, 255, 0.85);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    max-width: 62%;
+    pointer-events: none;
+  }
+
+  .showcase__symbol {
+    font-family: $font-display;
+    font-size: 60px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+  }
+
+  .showcase__name {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.94);
+  }
+
+  .showcase__value {
+    font-family: $font-mono;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.15;
+    margin-top: 2px;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    max-width: 100%;
+    max-height: 3.4em;
+    overflow: hidden;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}
+
+// --- Responsive ---
+@include media('tablet') {
+  .showcase__tile {
+    width: 118px;
+    height: 156px;
+    gap: 6px;
+
+    .showcase__symbol {
+      font-size: 50px;
+    }
+    .showcase__name {
+      font-size: 16px;
+    }
+    .showcase__value {
+      font-size: 13px;
+    }
+  }
+
+  .showcase__left,
+  .showcase__right {
+    height: 156px; /* matches tablet tile height */
+  }
+}
+
+// Compact screens: drop the annotation scaffolding and show a plain tile
+// above the table (never force desktop annotation coordinates).
+@media (max-width: 620px) {
+  .showcase {
+    width: 100%;
+  }
+
+  .showcase__left,
+  .showcase__right {
+    display: none;
+  }
+
+  .showcase__mid {
+    gap: 0;
+  }
+
+  .showcase__tile {
+    width: 122px;
+    height: 156px;
+    gap: 6px;
+  }
+}

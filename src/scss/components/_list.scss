@@ -1,0 +1,231 @@
+@use "../utils/_variables" as *;
+
+// --- List / Properties view ---
+.list-view {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 2px;
+}
+
+.list-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.list-search {
+  position: relative;
+  width: min(480px, 100%);
+}
+
+.list-search__icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 17px;
+  pointer-events: none;
+}
+
+.list-search__input {
+  width: 100%;
+  padding: 13px 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: $text-primary;
+  font-size: 16px;
+  font-family: $font-body;
+  outline: none;
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  &:focus {
+    border-color: rgba(122, 167, 255, 0.55);
+    box-shadow: 0 0 0 3px rgba(122, 167, 255, 0.14);
+  }
+}
+
+.list-cat-select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.list-cat-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: $text-primary;
+  font-size: 14px;
+  font-family: $font-body;
+  outline: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease,
+    color 0.2s ease;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.26);
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  &:focus,
+  &:focus-visible {
+    border-color: rgba(122, 167, 255, 0.55);
+    box-shadow: 0 0 0 3px rgba(122, 167, 255, 0.14);
+  }
+
+  &.is-open {
+    background: rgba($accent, 0.14);
+    border-color: rgba($accent, 0.55);
+    color: #fff;
+    box-shadow: 0 0 0 3px rgba($accent, 0.15);
+  }
+}
+
+.list-cat-select__label {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-cat-select__chevron {
+  flex: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 16px;
+  transition: transform 0.2s ease;
+
+  .list-cat-select.is-open & {
+    transform: rotate(180deg);
+    color: #fff;
+  }
+}
+
+.list-scroll {
+  overflow-x: auto;
+  border: 1px solid $panel-border;
+  border-radius: 14px;
+  background: rgba(24, 30, 43, 0.55);
+  backdrop-filter: blur(6px);
+}
+
+.list-table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: collapse;
+  font-size: 14px;
+
+  th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #10141f;
+    padding: 12px 14px;
+    text-align: left;
+    font-family: $font-mono;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: $text-faint;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 11px 14px;
+    white-space: nowrap;
+    font-family: $font-mono;
+    font-size: 13.5px;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+}
+
+.list-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+
+  &:hover {
+    color: #fff;
+  }
+
+  &.is-sorted {
+    color: $accent;
+  }
+}
+
+.list-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: $font-body;
+  font-size: 15px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.list-swatch {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font-family: $font-mono;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.list-empty {
+  padding: 32px;
+  text-align: center;
+  color: $text-faint;
+  font-size: 14px;
+}
+
+.list-count {
+  margin-top: 12px;
+  text-align: center;
+  font-family: $font-mono;
+  font-size: 12px;
+  color: $text-faint;
+}

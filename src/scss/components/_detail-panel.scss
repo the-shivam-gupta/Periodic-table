@@ -1,0 +1,537 @@
+@use "../utils/_variables" as *;
+@use "../utils/mixins" as *;
+
+// --- Element detail panel / modal ---
+.detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(4, 7, 13, 0.74);
+  backdrop-filter: blur(7px);
+}
+
+.detail-card {
+  position: relative;
+  width: min(920px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015) 40%),
+    #121725;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 45px 110px -30px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  color: $text-primary;
+}
+
+.detail-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: $text-primary;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(255, 255, 255, 0.14);
+
+    .detail-close__cross {
+      opacity: 0;
+      transform: rotate(90deg) scale(0.4);
+    }
+
+    .detail-close__minus {
+      opacity: 1;
+      transform: rotate(0deg) scale(1);
+    }
+  }
+}
+
+.detail-close__glyph {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.22s ease;
+}
+.detail-close__minus {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.4);
+}
+
+.detail-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 30px 32px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-wrap: wrap;
+}
+
+// Thin category-colored strip along the very top of the card, tying the
+// modal back to the element's identity at a glance.
+.explorer-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+.detail-symbol-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.detail-symbol {
+  font-family: $font-display;
+  font-size: 68px;
+  font-weight: 700;
+  line-height: 0.95;
+}
+
+.detail-mass {
+  font-family: $font-mono;
+  font-size: 13px;
+  color: $text-faint;
+  margin-top: 8px;
+}
+
+.detail-titles {
+  min-width: 150px;
+}
+
+.detail-number {
+  font-family: $font-mono;
+  font-size: 13px;
+  color: $text-faint;
+}
+
+.detail-name {
+  font-family: $font-display;
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1.05;
+  margin: 2px 0 8px;
+}
+
+.detail-category {
+  display: inline-block;
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+  font-family: $font-mono;
+}
+
+// Tinted with the element's own category color (inline `background`/
+// `border-color`) so the category reads clearly at a glance instead of
+// blending into a flat neutral pill.
+.explorer-category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.explorer-category-chip__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+.detail-body {
+  padding: 24px 32px 32px;
+}
+
+.detail-section {
+  margin-top: 22px;
+}
+
+.detail-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: $font-display;
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: $text-faint;
+  margin-bottom: 12px;
+}
+
+.detail-section-title__icon {
+  flex: none;
+  font-size: 15px;
+  opacity: 0.75;
+}
+
+.fact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 13px 15px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  // A field with no data for this element — de-emphasized rather than
+  // looking like a broken/blank value.
+  &--empty {
+    .fact__value {
+      color: $text-faint;
+      font-weight: 400;
+      font-style: italic;
+    }
+  }
+}
+
+.fact__label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: $text-faint;
+  font-family: $font-mono;
+  overflow-wrap: anywhere;
+}
+
+.fact__value {
+  font-size: var(--text-base);
+  font-weight: 500;
+  font-family: $font-mono;
+  word-break: break-word;
+}
+
+.detail-summary {
+  font-size: var(--text-md);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.detail-config {
+  font-family: $font-mono;
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.78);
+  word-break: break-word;
+}
+
+.detail-config--short {
+  margin-top: 6px;
+  font-size: 15px;
+  color: $accent;
+}
+
+.detail-shells {
+  margin-top: 10px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.72);
+  font-family: $font-mono;
+}
+
+.detail-source {
+  display: inline-block;
+  margin-top: 24px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: rgba(122, 167, 255, 0.14);
+  border: 1px solid rgba(122, 167, 255, 0.35);
+  color: #cfe0ff;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    background: rgba(122, 167, 255, 0.24);
+    transform: translateY(-1px);
+  }
+}
+
+@include media('tablet') {
+  .detail-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .detail-card {
+    max-height: 94vh;
+    border-radius: 18px 18px 0 0;
+    width: 100%;
+  }
+
+  .detail-header {
+    padding: 22px 20px 16px;
+    gap: 14px;
+  }
+
+  .detail-body {
+    padding: 16px 20px 24px;
+  }
+
+  .detail-symbol {
+    font-size: 58px;
+  }
+
+  .detail-name {
+    font-size: 32px;
+  }
+}
+
+// ===== Element Explorer =====
+.explorer-header {
+  align-items: flex-start;
+}
+
+.explorer-heading {
+  flex: 1 1 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.explorer-number {
+  font-family: $font-mono;
+  font-size: 13px;
+  color: $text-faint;
+}
+
+.explorer-symbol-block {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.explorer-symbol {
+  font-family: $font-display;
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 0.9;
+}
+
+.explorer-name {
+  font-family: $font-display;
+  font-size: 31px;
+  font-weight: 700;
+  line-height: 1.05;
+}
+
+.explorer-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.explorer-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 6px 12px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+
+  .explorer-chip__label {
+    font-family: $font-mono;
+    font-size: 10.5px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: $text-faint;
+  }
+
+  .explorer-chip__value {
+    font-size: 15px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.92);
+  }
+}
+
+.explorer-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
+  gap: 28px;
+  align-items: start;
+}
+
+.explorer-main {
+  min-width: 0;
+}
+
+.explorer-side {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.explorer-figure {
+  margin: 0;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.explorer-image-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+}
+
+.explorer-image {
+  max-width: 100%;
+  max-height: 240px;
+  object-fit: contain;
+}
+
+.explorer-image-fallback {
+  min-height: 200px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  span {
+    font-family: $font-display;
+    font-size: 68px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.45);
+  }
+
+  em {
+    font-style: normal;
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.72);
+  }
+}
+
+.explorer-attribution {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: $text-faint;
+}
+
+.explorer-appearance {
+  margin-top: 14px;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.78);
+  padding: 12px 15px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+
+  .fact__label {
+    margin-right: 6px;
+  }
+}
+
+.explorer-mols__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+}
+
+.explorer-sources {
+  list-style: none;
+
+  li {
+    margin-bottom: 4px;
+  }
+}
+
+.explorer-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #cfe0ff;
+  text-decoration: none;
+  max-width: 100%;
+  word-break: break-all;
+
+  svg {
+    display: inline;
+  }
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.explorer-source-note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: $text-faint;
+  word-break: break-word;
+}
+
+@include media('tablet') {
+  .explorer-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .explorer-symbol {
+    font-size: 52px;
+  }
+
+  .explorer-name {
+    font-size: 27px;
+  }
+
+  .explorer-quick {
+    gap: 5px;
+  }
+}
