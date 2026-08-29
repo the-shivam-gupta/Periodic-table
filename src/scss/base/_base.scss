@@ -23,10 +23,25 @@
 
 html {
   scroll-behavior: auto;
+  // Reserve the vertical scrollbar's width permanently instead of letting it
+  // appear/disappear as content height changes (e.g. switching table pages)
+  // — that toggle was shifting the whole page horizontally. `overflow-y:
+  // scroll` reserves the space in every browser; `scrollbar-gutter: stable`
+  // lets modern ones keep that space without always painting the track.
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+  // Safety net, not the fix: every known source of horizontal overflow
+  // (the periodic table, the list table, nav-tabs, popovers) is contained
+  // in its own scroll container. This just guards against the page itself
+  // ever gaining a horizontal scrollbar if something new slips through —
+  // it should never actually be doing anything.
+  overflow-x: hidden;
 }
 
 body {
   min-height: 100vh;
+  max-width: 100vw;
+  overflow-x: hidden;
   background:
     radial-gradient(1100px 700px at 72% -12%, rgba(88, 120, 220, 0.16), transparent 60%),
     radial-gradient(900px 560px at 8% 108%, rgba(30, 140, 160, 0.13), transparent 55%),
@@ -38,6 +53,10 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+#root {
+  overflow-x: hidden;
 }
 
 ::selection {

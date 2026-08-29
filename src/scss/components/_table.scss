@@ -434,14 +434,18 @@
 }
 
 @include media('mobile-sm') {
+  // Floor of readable/tappable size — deliberately not shrunk further than
+  // this even though the full 18-column grid still needs horizontal scroll
+  // to fit. Fitting more columns on screen is not worth cells becoming
+  // unreadable or mis-tappable.
   .element-cell,
   .blank-cell {
-    width: 46px;
-    height: 64px;
+    width: 54px;
+    height: 68px;
   }
 
   .group-num {
-    width: 46px;
+    width: 54px;
   }
 
   .element-cell {
@@ -454,7 +458,7 @@
       display: none; /* cells too narrow on small screens */
     }
     .el-symbol {
-      font-size: 20px;
+      font-size: 22px;
     }
     .el-name {
       font-size: 10px;
@@ -466,20 +470,53 @@
   }
 }
 
-// Compact screens: move the Property Showcase above the table instead of
-// squeezing it into the shrunken central hole.
+// --- Mobile: showcase lives ABOVE the table, not inside its scroll area ---
+// The in-grid `.table-center` is anchored to a fixed spot *within* the wide
+// scrollable content — centering its own content there only ever looks
+// "centered" when the table happens to be scrolled to that exact position.
+// Below this width, App.js instead mounts a second, independent copy of the
+// showcase (`.table-center-mobile`) as a sibling *outside* `.table-scroll`,
+// so it's simply a normal block that stays put regardless of horizontal
+// scroll. Swap which of the two is shown right here; `_showcase.scss` drops
+// the desktop annotation lines at this same width so both changes land
+// together instead of leaving an in-between state.
+.table-center-mobile {
+  display: none;
+}
+
+.table-swipe-hint {
+  display: none;
+}
+
 @media (max-width: 620px) {
-  .periodic-table {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  .table-center {
+    display: none;
   }
 
-  .table-center {
-    position: static;
-    order: -1;
-    height: auto;
-    width: min(100%, 460px);
-    margin: 0 0 16px;
+  .table-center-mobile {
+    display: block;
+    width: 100%;
+    max-width: 460px;
+    margin: 0 auto 16px;
+  }
+
+  .table-swipe-hint {
+    display: block;
+    margin: 0 0 8px;
+    text-align: center;
+    font-family: $font-mono;
+    font-size: 11.5px;
+    letter-spacing: 0.02em;
+    color: $text-faint;
+    animation: swipe-hint-fade 2.4s ease-in-out infinite;
+  }
+}
+
+@keyframes swipe-hint-fade {
+  0%, 100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
   }
 }

@@ -9,9 +9,10 @@ import {
   FiBookOpen,
   FiGrid,
 } from "react-icons/fi";
-import AtomVisualization from "./AtomVisualization";
 import MoleculeVisualization from "./MoleculeVisualization";
+import useScrollLock from "../hooks/useScrollLock";
 import { animateDetailIn, animateDetailOut } from "../animations/modalAnimations";
+import { prefersReducedMotion } from "../animations/usePrefersReducedMotion";
 import { categoryColors, titleCategory } from "../data/categories";
 import { formatSig } from "../data/propertyScale";
 import { moleculesContaining } from "../data/molecules";
@@ -46,13 +47,78 @@ function SectionTitle({ icon: Icon, children }) {
   );
 }
 
-export default function ElementExplorer({ element, onClose }) {
+export default function ElementExplorer({ element, onClose, accentColor }) {
   const rootRef = useRef(null);
+  const figureBodyRef = useRef(null);
   const [imgError, setImgError] = useState(false);
+  const [modelError, setModelError] = useState(false);
+  const [figureTab, setFigureTab] = useState("photo");
   const [from, to] = categoryColors(element.category);
+  // When a "Color by" property is active, the symbol, the active figure tab,
+  // the card wash, the top accent line and the category chip all follow
+  // that property's color for this element (matching the hover preview
+  // card) instead of always falling back to the plain category color —
+  // otherwise opening the explorer while Color-by is on looks like it reset
+  // to "None". There's only one solid color from a heat property (not a
+  // two-stop pair like the category gradients), so it stands in for both
+  // `from` and `to` wherever a gradient needs two stops.
+  const symbolColor = accentColor || from;
+  const symbolColorTo = accentColor || to;
   const relatedMolecules = moleculesContaining(element.symbol);
 
-  useEffect(() => setImgError(false), [element.number]);
+  useEffect(() => {
+    setImgError(false);
+    setModelError(false);
+    setFigureTab("photo");
+  }, [element.number]);
+
+  // <model-viewer> is a custom element from a fairly large library — load it
+  // lazily on first use (opening any element's detail panel) rather than
+  // paying for it in the app's initial bundle. The element auto-upgrades in
+  // place the instant the module registers it, even if it was already
+  // sitting in the DOM as an unknown tag.
+  useEffect(() => {
+    import("@google/model-viewer").catch(() => {});
+  }, []);
+
+  const photoAvailable = Boolean(element.image);
+  const modelAvailable = Boolean(element.bohrModel3d);
+  const showFigureTabs = photoAvailable && modelAvailable;
+  const activeTab = showFigureTabs ? figureTab : modelAvailable ? "3d" : "photo";
+  const showModel = activeTab === "3d" && modelAvailable && !modelError;
+  const showPhoto = activeTab === "photo" && photoAvailable && !imgError;
+
+  // Photo/3D Model swap the figure's whole content (an <img> for one, a
+  // <model-viewer> for the other) rather than crossfading a shared element,
+  // so React just hard-swaps the DOM with nothing in between. Ease the new
+  // content in on every switch instead of letting it pop in instantly.
+  useLayoutEffect(() => {
+    const body = figureBodyRef.current;
+    if (!body || prefersReducedMotion()) return;
+    gsap.fromTo(
+      body,
+      { opacity: 0, y: 6 },
+      { opacity: 1, y: 0, duration: 0.32, ease: "power2.out", overwrite: "auto" }
+    );
+  }, [activeTab, showModel, showPhoto]);
+
+  const hasShells = Array.isArray(element.shells) && element.shells.length > 0;
+  const hasIonizationEnergies =
+    Array.isArray(element.ionizationEnergies) && element.ionizationEnergies.length > 0;
+  const hasAtomicFacts =
+    has(element.electronConfiguration) ||
+    (has(element.electronConfigurationSemantic) &&
+      element.electronConfigurationSemantic !== element.electronConfiguration) ||
+    hasShells ||
+    has(element.electronAffinity) ||
+    has(element.electronegativity) ||
+    hasIonizationEnergies;
+  const hasPhysicalFacts =
+    has(element.phase) ||
+    has(element.density) ||
+    has(element.melt) ||
+    has(element.boil) ||
+    has(element.molarHeat);
 
   const close = useCallback(() => {
     const root = rootRef.current;
@@ -64,17 +130,14 @@ export default function ElementExplorer({ element, onClose }) {
     tl.eventCallback("onComplete", onClose);
   }, [onClose]);
 
+  useScrollLock(true);
+
   useEffect(() => {
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     const onKey = (e) => {
       if (e.key === "Escape") close();
     };
     window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = prevOverflow;
-      window.removeEventListener("keydown", onKey);
-    };
+    return () => window.removeEventListener("keydown", onKey);
   }, [close]);
 
   useLayoutEffect(() => {
@@ -85,8 +148,7 @@ export default function ElementExplorer({ element, onClose }) {
         root,
         root.querySelector(".detail-card"),
         root.querySelector(".detail-header"),
-        [...root.querySelectorAll(".detail-section")],
-        root.querySelector(".atom")
+        [...root.querySelectorAll(".detail-section")]
       );
     }, root);
     return () => ctx.revert();
@@ -100,7 +162,17 @@ export default function ElementExplorer({ element, onClose }) {
       aria-modal="true"
       aria-label={`${element.name} details`}
     >
-      <div className="detail-card explorer-card">
+      <div
+        className="detail-card explorer-card"
+        style={{
+          // `color-mix` rather than the hex-alpha-suffix trick (`${x}42`) —
+          // symbolColor is a plain hex string for the category-color case,
+          // but an `rgb(r, g, b)` string when a Color-by property is active,
+          // and appending hex digits to an rgb() string just produces
+          // invalid CSS. color-mix works with either.
+          background: `linear-gradient(180deg, color-mix(in srgb, ${symbolColor} 26%, transparent) 0%, color-mix(in srgb, ${symbolColor} 10%, transparent) 40%, color-mix(in srgb, ${symbolColor} 4%, transparent) 100%), linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015) 40%), #121725`,
+        }}
+      >
         <button type="button" className="detail-close" onClick={close} aria-label="Close details">
           <span className="detail-close__glyph detail-close__cross" aria-hidden="true">
             ×
@@ -110,30 +182,30 @@ export default function ElementExplorer({ element, onClose }) {
           </span>
         </button>
 
-        <header
-          className="detail-header explorer-header"
-          style={{ background: `linear-gradient(150deg, ${from}4d, transparent 68%)` }}
-        >
+        <header className="detail-header explorer-header">
           <div
             className="explorer-accent"
-            style={{ background: `linear-gradient(90deg, ${from}, ${to})` }}
+            style={{ background: `linear-gradient(90deg, ${symbolColor}, ${symbolColorTo})` }}
             aria-hidden="true"
           />
           <div className="explorer-heading">
             <span className="explorer-number">#{element.number}</span>
             <div className="explorer-symbol-block">
-              <span className="explorer-symbol" style={{ color: from }}>
+              <span className="explorer-symbol" style={{ color: symbolColor }}>
                 {element.symbol}
               </span>
               <span className="explorer-name">{element.name}</span>
             </div>
             <span
               className="detail-category explorer-category-chip"
-              style={{ background: `${from}33`, borderColor: `${from}99` }}
+              style={{
+                background: `color-mix(in srgb, ${symbolColor} 20%, transparent)`,
+                borderColor: `color-mix(in srgb, ${symbolColor} 60%, transparent)`,
+              }}
             >
               <span
                 className="explorer-category-chip__dot"
-                style={{ background: `linear-gradient(135deg, ${from}, ${to})` }}
+                style={{ background: `linear-gradient(135deg, ${symbolColor}, ${symbolColorTo})` }}
                 aria-hidden="true"
               />
               {titleCategory(element.category)}
@@ -149,8 +221,6 @@ export default function ElementExplorer({ element, onClose }) {
               />
             </div>
           </div>
-
-          <AtomVisualization element={element} />
         </header>
 
         <div className="detail-body explorer-body">
@@ -168,67 +238,49 @@ export default function ElementExplorer({ element, onClose }) {
                 </section>
               )}
 
-              <section className="detail-section">
-                <SectionTitle icon={FiZap}>Atomic Properties</SectionTitle>
-                <div className="fact-grid">
-                  <Fact label="Electron Config" empty={!has(element.electronConfiguration)}>
-                    {element.electronConfiguration || "N/A"}
-                  </Fact>
-                  {element.electronConfigurationSemantic !== element.electronConfiguration &&
-                    has(element.electronConfigurationSemantic) && (
-                      <Fact label="Short Form">{element.electronConfigurationSemantic}</Fact>
+              {hasAtomicFacts && (
+                <section className="detail-section">
+                  <SectionTitle icon={FiZap}>Atomic Properties</SectionTitle>
+                  <div className="fact-grid">
+                    {has(element.electronConfiguration) && (
+                      <Fact label="Electron Config">{element.electronConfiguration}</Fact>
                     )}
-                  <Fact
-                    label="Shells"
-                    empty={!(Array.isArray(element.shells) && element.shells.length)}
-                  >
-                    {Array.isArray(element.shells) && element.shells.length
-                      ? element.shells.join(" · ")
-                      : "N/A"}
-                  </Fact>
-                  <Fact label="Electron Affinity" empty={!has(element.electronAffinity)}>
-                    {has(element.electronAffinity) ? `${element.electronAffinity} kJ/mol` : "N/A"}
-                  </Fact>
-                  <Fact label="Electronegativity" empty={!has(element.electronegativity)}>
-                    {has(element.electronegativity) ? element.electronegativity : "N/A"}
-                  </Fact>
-                  <Fact
-                    label="Ionization Energy"
-                    empty={
-                      !(
-                        Array.isArray(element.ionizationEnergies) &&
-                        element.ionizationEnergies.length
-                      )
-                    }
-                  >
-                    {Array.isArray(element.ionizationEnergies) &&
-                    element.ionizationEnergies.length
-                      ? `${element.ionizationEnergies.join(" · ")} kJ/mol`
-                      : "N/A"}
-                  </Fact>
-                </div>
-              </section>
+                    {element.electronConfigurationSemantic !== element.electronConfiguration &&
+                      has(element.electronConfigurationSemantic) && (
+                        <Fact label="Short Form">{element.electronConfigurationSemantic}</Fact>
+                      )}
+                    {hasShells && <Fact label="Shells">{element.shells.join(" · ")}</Fact>}
+                    {has(element.electronAffinity) && (
+                      <Fact label="Electron Affinity">{element.electronAffinity} kJ/mol</Fact>
+                    )}
+                    {has(element.electronegativity) && (
+                      <Fact label="Electronegativity">{element.electronegativity}</Fact>
+                    )}
+                    {hasIonizationEnergies && (
+                      <Fact label="Ionization Energy">
+                        {element.ionizationEnergies.join(" · ")} kJ/mol
+                      </Fact>
+                    )}
+                  </div>
+                </section>
+              )}
 
-              <section className="detail-section">
-                <SectionTitle icon={FiThermometer}>Physical Properties</SectionTitle>
-                <div className="fact-grid">
-                  <Fact label="Phase" empty={!has(element.phase)}>
-                    {element.phase || "N/A"}
-                  </Fact>
-                  <Fact label="Density" empty={!has(element.density)}>
-                    {has(element.density) ? `${element.density} g/cm³` : "N/A"}
-                  </Fact>
-                  <Fact label="Melting Point" empty={!has(element.melt)}>
-                    {has(element.melt) ? `${element.melt} K` : "N/A"}
-                  </Fact>
-                  <Fact label="Boiling Point" empty={!has(element.boil)}>
-                    {has(element.boil) ? `${element.boil} K` : "N/A"}
-                  </Fact>
-                  <Fact label="Molar Heat" empty={!has(element.molarHeat)}>
-                    {has(element.molarHeat) ? `${element.molarHeat} J/(mol·K)` : "N/A"}
-                  </Fact>
-                </div>
-              </section>
+              {hasPhysicalFacts && (
+                <section className="detail-section">
+                  <SectionTitle icon={FiThermometer}>Physical Properties</SectionTitle>
+                  <div className="fact-grid">
+                    {has(element.phase) && <Fact label="Phase">{element.phase}</Fact>}
+                    {has(element.density) && (
+                      <Fact label="Density">{element.density} g/cm³</Fact>
+                    )}
+                    {has(element.melt) && <Fact label="Melting Point">{element.melt} K</Fact>}
+                    {has(element.boil) && <Fact label="Boiling Point">{element.boil} K</Fact>}
+                    {has(element.molarHeat) && (
+                      <Fact label="Molar Heat">{element.molarHeat} J/(mol·K)</Fact>
+                    )}
+                  </div>
+                </section>
+              )}
 
               <section className="detail-section">
                 <SectionTitle icon={FiClock}>Discovery</SectionTitle>
@@ -245,30 +297,83 @@ export default function ElementExplorer({ element, onClose }) {
 
             <aside className="explorer-side">
               <figure className="explorer-figure">
-                {element.image && !imgError ? (
-                  <>
-                    <div className="explorer-image-wrap">
-                      <img
-                        className="explorer-image"
-                        src={element.image.url}
-                        alt={element.image.title || `${element.name} sample`}
-                        loading="lazy"
-                        onError={() => setImgError(true)}
-                      />
-                    </div>
-                    <figcaption className="explorer-attribution">
-                      {element.image.title}
-                    </figcaption>
-                  </>
-                ) : (
+                {showFigureTabs && (
                   <div
-                    className="explorer-image-fallback"
-                    style={{ background: `linear-gradient(155deg, ${from}, transparent)` }}
+                    className="explorer-figure-tabs"
+                    role="tablist"
+                    aria-label={`${element.name} figure view`}
+                    style={{ "--figure-tab-active": symbolColor }}
                   >
-                    <span>{element.symbol}</span>
-                    <em>No image available for {element.name}</em>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={figureTab === "photo"}
+                      className={`explorer-figure-tab${figureTab === "photo" ? " is-active" : ""}`}
+                      onClick={() => setFigureTab("photo")}
+                    >
+                      Photo
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={figureTab === "3d"}
+                      className={`explorer-figure-tab${figureTab === "3d" ? " is-active" : ""}`}
+                      onClick={() => setFigureTab("3d")}
+                    >
+                      3D Model
+                    </button>
                   </div>
                 )}
+
+                <div className="explorer-figure-body" ref={figureBodyRef}>
+                  {showModel ? (
+                    <>
+                      <div className="explorer-model-wrap">
+                        {/* eslint-disable-next-line react/no-unknown-property */}
+                        <model-viewer
+                          key={element.bohrModel3d}
+                          src={element.bohrModel3d}
+                          alt={`${element.name} 3D atomic model`}
+                          camera-controls
+                          auto-rotate
+                          rotation-per-second="16deg"
+                          interaction-prompt="none"
+                          shadow-intensity="0"
+                          loading="eager"
+                          onError={() => setModelError(true)}
+                        />
+                      </div>
+                      <figcaption className="explorer-attribution">
+                        Drag to rotate · scroll to zoom
+                      </figcaption>
+                    </>
+                  ) : showPhoto ? (
+                    <>
+                      <div className="explorer-image-wrap">
+                        <img
+                          className="explorer-image"
+                          src={element.image.url}
+                          alt={element.image.title || `${element.name} sample`}
+                          loading="lazy"
+                          onError={() => setImgError(true)}
+                        />
+                      </div>
+                      <figcaption className="explorer-attribution">
+                        {element.image.title}
+                      </figcaption>
+                    </>
+                  ) : (
+                    <div
+                      className="explorer-image-fallback"
+                      style={{ background: `linear-gradient(155deg, ${from}, transparent)` }}
+                    >
+                      <span>{element.symbol}</span>
+                      <em>
+                        No {activeTab === "3d" ? "3D model" : "image"} available for {element.name}
+                      </em>
+                    </div>
+                  )}
+                </div>
               </figure>
 
               {relatedMolecules.length > 0 && (

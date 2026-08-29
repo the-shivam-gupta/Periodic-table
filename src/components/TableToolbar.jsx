@@ -11,6 +11,7 @@ import {
   FiX,
 } from "react-icons/fi";
 import { FILTER_COLORS, DEFAULT_COLOR } from "../data/categories";
+import useScrollLock from "../hooks/useScrollLock";
 import { PROPERTIES, getPropertyConfig } from "../data/propertyScale";
 import { openPopover, closePopover, positionPopover } from "../animations/toolbarAnimations";
 
@@ -125,10 +126,20 @@ export default function TableToolbar({
     };
   }, [open, closeMenu]);
 
-  // Keep the popover glued to its trigger button — the popover is portaled
-  // to document.body and positioned with fixed coordinates computed at open
-  // time, so without this it stays put while the page (and the button)
-  // scrolls out from under it.
+  // Lock background scroll while a popover is open. It's `position: fixed`
+  // with coordinates computed once at open time — on mobile especially, a
+  // background scroll changes those coordinates out from under it (and on
+  // top of that, the browser's own address-bar show/hide during scroll
+  // changes viewport height mid-gesture), so the popover visibly drifts/
+  // jumps as you scroll. Since there's nothing behind it worth scrolling to
+  // while it's open anyway, just disable the scroll instead of chasing it.
+  useScrollLock(!!open);
+
+  // Keep the popover glued to its trigger button in case anything still
+  // manages to scroll while it's open (e.g. a resize) — the popover is
+  // portaled to document.body and positioned with fixed coordinates computed
+  // at open time, so without this it could stay put while the page (and the
+  // button) moves out from under it.
   useEffect(() => {
     if (!open) return;
     const reposition = (e) => {

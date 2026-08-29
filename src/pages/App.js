@@ -36,7 +36,7 @@ import {
 
 const VIEWS = [
   { key: "table", label: "Table" },
-  { key: "list", label: "List / Properties" },
+  { key: "list", label: "List / Properties", shortLabel: "List" },
   { key: "game", label: "Game" },
 ];
 
@@ -77,18 +77,31 @@ export default function App() {
     [activeCategory]
   );
 
-  const heatStyleFor = useCallback(
+  // The single solid color a "Color by" property maps an element to — shared
+  // by heatStyleFor (which turns it into the table cell's gradient) and the
+  // hover preview card's glow ring, so both actually agree with each other
+  // instead of the glow staying tied to the plain category color regardless
+  // of which property is selected.
+  const heatBaseColor = useCallback(
     (el) => {
       if (!heatScale) return null;
       const v = propertyValue(el, heatKey);
       if (heatScale.missing(v)) return null;
-      const c = heatConfig?.categoryShaded
+      return heatConfig?.categoryShaded
         ? categoryShade(el.category, v, heatKey)
         : heatScale.color(v);
+    },
+    [heatScale, heatKey, heatConfig]
+  );
+
+  const heatStyleFor = useCallback(
+    (el) => {
+      const c = heatBaseColor(el);
+      if (!c) return null;
       const soft = c.replace("rgb(", "rgba(").replace(")", ", 0.8)");
       return `linear-gradient(160deg, ${c}, ${soft})`;
     },
-    [heatScale, heatKey, heatConfig]
+    [heatBaseColor]
   );
 
   const heatBadgeFor = useCallback(
@@ -237,8 +250,13 @@ export default function App() {
     const gap = 16;
 
     let x = rect.right + gap;
-    if (x + w > window.innerWidth - 10) x = rect.left - w - gap;
+    let side = "right"; // card sits to the right of the cell -> arrow on its left edge
+    if (x + w > window.innerWidth - 10) {
+      x = rect.left - w - gap;
+      side = "left"; // card sits to the left of the cell -> arrow on its right edge
+    }
     const y = Math.max(10, Math.min(rect.top, window.innerHeight - h - 10));
+    pv.dataset.side = side;
 
     gsap.to(pv, {
       x,
@@ -370,15 +388,42 @@ export default function App() {
     document.documentElement.classList.toggle("force-reduced-motion", reduceMotion);
   }, [reduceMotion]);
 
-  // Keep the table scrolled to its start when switching views or layouts.
+  // Keep the table scrolled to its start when switching views or layouts —
+  // except on mobile, where the table is wide enough to need horizontal
+  // scroll no matter what: starting pinned to the far-left edge (element 1)
+  // makes it hard to tell there's a whole table to the right, so the first
+  // time it's shown there we center the scroll instead. Only once, though —
+  // re-centering on every return trip to this tab would fight whatever
+  // position the user had scrolled to themselves.
+  const hasCenteredMobileTableRef = useRef(false);
+  // Baseline scrollLeft set by the auto-center below, so the scroll handler
+  // can tell "that was just us centering it" apart from an actual user
+  // swipe — setting `.scrollLeft` fires a real scroll event too.
+  const tableBaselineScrollRef = useRef(null);
+  // "Swipe to explore" hint on mobile — shown until the user actually
+  // scrolls the table themselves.
+  const [tableSwiped, setTableSwiped] = useState(false);
+
   useEffect(() => {
     if (view !== "table") return;
     const scroller = rootRef.current?.querySelector(".table-scroll");
-    if (scroller) {
+    if (!scroller) return;
+    const isMobile = window.innerWidth <= 620;
+    if (isMobile && !hasCenteredMobileTableRef.current) {
+      scroller.scrollLeft = Math.max(0, (scroller.scrollWidth - scroller.clientWidth) / 2);
+      scroller.scrollTop = 0;
+      hasCenteredMobileTableRef.current = true;
+      tableBaselineScrollRef.current = scroller.scrollLeft;
+    } else if (!isMobile) {
       scroller.scrollLeft = 0;
       scroller.scrollTop = 0;
     }
   }, [view]);
+
+  const handleTableScroll = useCallback((e) => {
+    const baseline = tableBaselineScrollRef.current ?? 0;
+    if (Math.abs(e.currentTarget.scrollLeft - baseline) > 8) setTableSwiped(true);
+  }, []);
 
   return (
     <div className="app" ref={rootRef}>
@@ -406,8 +451,20 @@ export default function App() {
               type="button"
               className={`nav-tab${view === v.key ? " is-active" : ""}`}
               onClick={() => setView(v.key)}
+              aria-label={v.label}
             >
-              {v.label}
+              {/* The button's own aria-label carries the accessible name, so
+                  both spans below are purely presentational — whichever one
+                  CSS shows at the current width, the announced name never
+                  changes. */}
+              <span className="nav-tab__full" aria-hidden="true">
+                {v.label}
+              </span>
+              {v.shortLabel && (
+                <span className="nav-tab__short" aria-hidden="true">
+                  {v.shortLabel}
+                </span>
+              )}
             </button>
           ))}
         </nav>
@@ -509,7 +566,22 @@ export default function App() {
                 </div>
 
               <section className="table-section">
-                <div className="table-scroll">
+                {/* Mobile-only: a real second render of the showcase, sitting
+                    OUTSIDE the horizontally-scrolling table so it stays put
+                    regardless of scroll position — the in-grid instance below
+                    is anchored to a fixed spot *within* the scrollable content
+                    itself, so it drifts out of view as soon as the table is
+                    scrolled (it's hidden via CSS at this width instead). Same
+                    `centerNode` element, mounted independently here. */}
+                {centerNode && <div className="table-center-mobile">{centerNode}</div>}
+
+                {!tableSwiped && (
+                  <p className="table-swipe-hint" aria-hidden="true">
+                    Swipe horizontally to explore the periodic table →
+                  </p>
+                )}
+
+                <div className="table-scroll" onScroll={handleTableScroll}>
                   <PeriodicTable
                     ref={tableRef}
                     mode="wide"
@@ -556,6 +628,7 @@ export default function App() {
           <PreviewCard
             element={hoveredElement}
             background={heatStyleFor(hoveredElement)}
+            glowColor={heatMode ? heatBaseColor(hoveredElement) : null}
             missing={
               heatMode &&
               isMissingValueFor(heatConfig?.kind, propertyValue(hoveredElement, heatKey))
@@ -564,7 +637,13 @@ export default function App() {
         )}
       </div>
 
-      {selected && <ElementExplorer element={selected} onClose={closeDetail} />}
+      {selected && (
+        <ElementExplorer
+          element={selected}
+          onClose={closeDetail}
+          accentColor={heatMode ? heatBaseColor(selected) : null}
+        />
+      )}
     </div>
   );
 }

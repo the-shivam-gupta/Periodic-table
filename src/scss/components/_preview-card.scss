@@ -12,20 +12,34 @@
 }
 
 .preview-card {
+  --preview-glow: #{$accent};
+
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   width: 160px;
   height: 220px;
   padding: 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  box-shadow: 0 24px 50px -20px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(0, 0, 0, 0.25);
+  border-radius: 16px;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
   color: $text-primary;
   background-color: $card-bg;
 
-  // Element has no value for the active "Color by" property — match the grid
-  // cell's own transparent/outlined "missing" treatment instead of a color.
+  // A soft colored halo (in the element's own category color) plus a bright
+  // rim light is what actually separates this from a plain scaled-down copy
+  // of the center tile / grid cell — it reads as a floating popup, not
+  // another table cell.
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.3),
+    0 22px 46px -18px rgba(0, 0, 0, 0.8),
+    0 0 0 5px color-mix(in srgb, var(--preview-glow) 22%, transparent),
+    0 0 34px 2px color-mix(in srgb, var(--preview-glow) 55%, transparent);
+  animation: preview-pop 0.28s ease;
+
+  // Element has no value for the active "Color by" property — match the
+  // grid cell's own transparent/outlined "missing" treatment instead of a
+  // color.
   &.is-missing {
     background: $card-bg;
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12),
@@ -86,6 +100,45 @@
     font-size: 11px;
     font-family: $font-mono;
     opacity: 0.75;
+  }
+}
+
+// Speech-bubble tail pointing back at the hovered cell — a static tile can
+// never have this, so it's an unmistakable "this is a popup" cue. Its side
+// flips with .hover-preview[data-side] (set from JS based on which side of
+// the cell the card actually landed on).
+.preview-card__arrow {
+  position: absolute;
+  top: 34px;
+  width: 14px;
+  height: 14px;
+  background: inherit;
+  background-color: inherit;
+  border: inherit;
+  border-radius: 3px;
+}
+
+.hover-preview[data-side="right"] .preview-card__arrow {
+  left: -8px;
+  border-right: none;
+  border-top: none;
+  transform: rotate(45deg);
+}
+
+.hover-preview[data-side="left"] .preview-card__arrow {
+  right: -8px;
+  border-left: none;
+  border-bottom: none;
+  transform: rotate(45deg);
+}
+
+@keyframes preview-pop {
+  from {
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.3),
+      0 22px 46px -18px rgba(0, 0, 0, 0.8),
+      0 0 0 0 color-mix(in srgb, var(--preview-glow) 22%, transparent),
+      0 0 0 0 color-mix(in srgb, var(--preview-glow) 55%, transparent);
   }
 }
 

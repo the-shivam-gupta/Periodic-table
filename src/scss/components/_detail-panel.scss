@@ -192,25 +192,24 @@
   opacity: 0.75;
 }
 
+// Plain label/value rows separated by a thin divider — replaces the old
+// grid-of-boxed-cards pattern, which stacked up into a cluttered wall of
+// bordered tiles once a section had more than a couple of facts.
 .fact-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
 }
 
 .fact {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 13px 15px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 12px;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 
-  &:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.12);
+  &:last-child {
+    border-bottom: none;
   }
 
   // A field with no data for this element — de-emphasized rather than
@@ -225,6 +224,7 @@
 }
 
 .fact__label {
+  flex: none;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -234,6 +234,7 @@
 }
 
 .fact__value {
+  text-align: right;
   font-size: var(--text-base);
   font-weight: 500;
   font-family: $font-mono;
@@ -418,6 +419,54 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+// Photo / 3D Model switch — only rendered when both assets exist for an
+// element, so it never shows up as a dead control.
+.explorer-figure-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.explorer-figure-tab {
+  flex: 1;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: $text-faint;
+  font-family: $font-mono;
+  font-size: 11.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+
+  &:hover {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  &.is-active {
+    // Same color as the element symbol (--figure-tab-active, set inline per
+    // element on .explorer-figure-tabs) — falls back to the plain accent
+    // tint if that variable isn't set for some reason.
+    background: var(--figure-tab-active, #{rgba($accent, 0.18)});
+    color: #fff;
+  }
+}
+
+// Wraps whichever of photo / 3D model / fallback is currently showing — the
+// fade-in transition (ElementExplorer.jsx) animates this element as a whole
+// on every Photo/3D Model switch. `flex column, gap 10px` reproduces the
+// spacing .explorer-figure used to provide directly between the image/model
+// wrap and its caption before this wrapper existed.
+.explorer-figure-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .explorer-image-wrap {
   display: flex;
   align-items: center;
@@ -425,6 +474,21 @@
   min-height: 200px;
   background: rgba(255, 255, 255, 0.04);
   border-radius: 10px;
+}
+
+.explorer-model-wrap {
+  display: flex;
+  min-height: 240px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: radial-gradient(120% 120% at 50% 20%, rgba(255, 255, 255, 0.06), transparent 60%),
+    rgba(255, 255, 255, 0.04);
+
+  model-viewer {
+    width: 100%;
+    height: 240px;
+    --poster-color: transparent;
+  }
 }
 
 .explorer-image {
@@ -465,12 +529,11 @@
 
 .explorer-appearance {
   margin-top: 14px;
+  padding-top: 12px;
   font-size: 15px;
+  line-height: 1.5;
   color: rgba(255, 255, 255, 0.78);
-  padding: 12px 15px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
 
   .fact__label {
     margin-right: 6px;

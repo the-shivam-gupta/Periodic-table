@@ -1,7 +1,7 @@
 import { categoryColors, titleCategory } from "../data/categories";
 import { formatSig } from "../data/propertyScale";
 
-const PreviewCard = ({ element, className, innerRef, background, missing }) => {
+const PreviewCard = ({ element, className, innerRef, background, glowColor, missing }) => {
   if (!element) return null;
 
   // Match whatever color this element is actually showing on the table —
@@ -14,14 +14,28 @@ const PreviewCard = ({ element, className, innerRef, background, missing }) => {
   // treatment (transparent, outlined) instead of falling back to a color.
   const [from, to] = categoryColors(element.category);
   const backgroundImage = background || `linear-gradient(160deg, ${from}, ${to})`;
+  // The glow ring follows the same source as the fill — the active heat
+  // color when one's selected, otherwise the plain category color — so it
+  // never disagrees with what the card is actually showing.
+  const glow = glowColor || to;
   const has = (v) => v !== null && v !== undefined;
 
   return (
     <div
       ref={innerRef}
       className={`preview-card${missing ? " is-missing" : ""} ${className || ""}`}
-      style={missing ? undefined : { backgroundColor: "#151a26", backgroundImage }}
+      style={
+        missing
+          ? undefined
+          : {
+              backgroundColor: "#151a26",
+              backgroundImage,
+              "--preview-glow": glow,
+            }
+      }
     >
+      <span className="preview-card__arrow" />
+
       <div className="preview-top">
         <span>{element.number}</span>
         <span>{has(element.atomicMass) ? formatSig(element.atomicMass, 5) : ""}</span>

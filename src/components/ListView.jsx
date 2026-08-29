@@ -1,12 +1,21 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import gsap from "gsap";
-import { FiSearch, FiArrowUp, FiArrowDown, FiChevronDown, FiCheck } from "react-icons/fi";
+import {
+  FiFilter,
+  FiArrowUp,
+  FiArrowDown,
+  FiChevronDown,
+  FiCheck,
+  FiChevronLeft,
+  FiChevronRight,
+} from "react-icons/fi";
 import { ELEMENTS } from "../data/elements";
 import { CATEGORIES, categoryColors, FILTER_COLORS, DEFAULT_COLOR } from "../data/categories";
 import { formatSig } from "../data/propertyScale";
 import { entrance } from "../animations/gameAnimations";
 import { openPopover, closePopover, positionPopover } from "../animations/toolbarAnimations";
+import useScrollLock from "../hooks/useScrollLock";
 
 const COLUMNS = [
   { key: "name", label: "Element", sortable: true },
@@ -38,15 +47,36 @@ const displayValue = (el, key) => {
   return formatSig(v, 5);
 };
 
+const PAGE_SIZE_OPTIONS = [
+  { value: 20, label: "20" },
+  { value: 50, label: "50" },
+  { value: 100, label: "100" },
+  { value: ELEMENTS.length, label: "All" },
+];
+const PAGE_SIZES = PAGE_SIZE_OPTIONS.map((o) => o.value);
+
 export default function ListView({ onOpen }) {
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState("number");
   const [sortDir, setSortDir] = useState("asc");
   const [catKey, setCatKey] = useState(null);
   const [catOpen, setCatOpen] = useState(false);
+  const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
+  const [page, setPage] = useState(1);
+  const [pageSizeOpen, setPageSizeOpen] = useState(false);
   const rowsRef = useRef(null);
   const catBtnRef = useRef(null);
   const catPopRef = useRef(null);
+  const pageSizeBtnRef = useRef(null);
+  const pageSizePopRef = useRef(null);
+
+  // Lock background scroll while either popover is open. Both are
+  // `position: fixed`, positioned once at open time — letting the page
+  // scroll behind them (especially on mobile, where the browser's own
+  // address-bar show/hide during a scroll also changes viewport height
+  // mid-gesture) makes them visibly drift/jump instead of staying glued to
+  // their trigger button.
+  useScrollLock(catOpen || pageSizeOpen);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -75,12 +105,34 @@ export default function ListView({ onOpen }) {
     return list;
   }, [query, sortKey, sortDir, catKey]);
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+
+  // Filtering/searching or changing page size invalidates the current page —
+  // jump back to page 1 rather than risk landing on a now-empty page.
+  useEffect(() => {
+    setPage(1);
+  }, [query, catKey, pageSize]);
+
+  // Sorting can also leave the page out of range (e.g. fewer results after a
+  // filter change lands `page` past the new last page) — clamp instead.
+  useEffect(() => {
+    setPage((p) => Math.min(p, totalPages));
+  }, [totalPages]);
+
+  const pageStart = (page - 1) * pageSize;
+  const paginated = useMemo(
+    () => filtered.slice(pageStart, pageStart + pageSize),
+    [filtered, pageStart, pageSize]
+  );
+
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
       entrance(rowsRef.current?.querySelectorAll(".list-row"));
     }, rowsRef);
     return () => ctx.revert();
-  }, [filtered.length, catKey, query]);
+  }, [paginated]);
+
+  const goToPage = (p) => setPage(Math.min(Math.max(1, p), totalPages));
 
   const toggleSort = (key) => {
     if (sortKey === key) {
@@ -151,20 +203,89 @@ export default function ListView({ onOpen }) {
     ? CATEGORIES.find((c) => c.key === catKey)?.label ?? "All categories"
     : "All categories";
 
+  // Rows-per-page dropdown — same custom popover as the category filter
+  // (not a native <select>, whose popup can't be themed to match the app).
+  const closePageSizeMenu = () => {
+    if (pageSizePopRef.current) {
+      closePopover(pageSizePopRef.current, () => setPageSizeOpen(false));
+    } else {
+      setPageSizeOpen(false);
+    }
+  };
+
+  const selectPageSize = (size) => {
+    setPageSize(size);
+    closePageSizeMenu();
+  };
+
+  useLayoutEffect(() => {
+    if (!pageSizeOpen) return;
+    if (pageSizeBtnRef.current && pageSizePopRef.current) {
+      openPopover(pageSizeBtnRef.current, pageSizePopRef.current, "right");
+    }
+  }, [pageSizeOpen]);
+
+  useEffect(() => {
+    if (!pageSizeOpen) return;
+    const onDown = (e) => {
+      const pop = pageSizePopRef.current;
+      const btn = pageSizeBtnRef.current;
+      if ((pop && pop.contains(e.target)) || (btn && btn.contains(e.target))) return;
+      closePageSizeMenu();
+    };
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        closePageSizeMenu();
+      }
+    };
+    const reposition = (e) => {
+      const btn = pageSizeBtnRef.current;
+      const pop = pageSizePopRef.current;
+      if (!btn || !pop) return;
+      if (pop.contains(e.target)) return;
+      positionPopover(btn, pop, "right");
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey, true);
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageSizeOpen]);
+
+  const activePageSizeLabel =
+    PAGE_SIZE_OPTIONS.find((o) => o.value === pageSize)?.label ?? String(pageSize);
+
   return (
     <div className="list-view">
+      {/* One bordered "Filter" toolbar (icon label + text + category), styled
+          as a table control rather than a second copy of the page's global
+          jump-to-element search — it narrows the rows below, it doesn't
+          navigate anywhere. */}
       <div className="list-toolbar">
+        <span className="list-toolbar__label">
+          <FiFilter aria-hidden="true" />
+          Filter
+        </span>
+
         <div className="list-search">
-          <FiSearch className="list-search__icon" />
           <input
             className="list-search__input"
             type="text"
-            placeholder="Search name, symbol, or atomic number…"
+            placeholder="By name, symbol, or atomic number…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            aria-label="Search elements"
+            aria-label="Filter elements shown in the table below"
           />
         </div>
+
+        <span className="list-toolbar__divider" aria-hidden="true" />
 
         <div className="list-cat-select-wrap">
           <button
@@ -241,11 +362,11 @@ export default function ListView({ onOpen }) {
             </tr>
           </thead>
           <tbody ref={rowsRef}>
-            {filtered.map((el) => {
+            {paginated.map((el) => {
               const [from, to] = categoryColors(el.category);
               return (
                 <tr key={el.number} className="list-row" onClick={() => onOpen(el)}>
-                  <td>
+                  <td className="list-cell--name">
                     <span className="list-name-cell">
                       <span
                         className="list-swatch"
@@ -256,15 +377,15 @@ export default function ListView({ onOpen }) {
                       {el.name}
                     </span>
                   </td>
-                  <td>{el.symbol}</td>
-                  <td>{el.number}</td>
-                  <td>{displayValue(el, "atomicMass")}</td>
-                  <td>{displayValue(el, "category")}</td>
-                  <td>{displayValue(el, "phase")}</td>
-                  <td>{displayValue(el, "density")}</td>
-                  <td>{displayValue(el, "electronegativity")}</td>
-                  <td>{displayValue(el, "melt")}</td>
-                  <td>{displayValue(el, "boil")}</td>
+                  <td data-label="Symbol">{el.symbol}</td>
+                  <td data-label="Atomic #">{el.number}</td>
+                  <td data-label="Atomic Mass">{displayValue(el, "atomicMass")}</td>
+                  <td data-label="Category">{displayValue(el, "category")}</td>
+                  <td data-label="Phase">{displayValue(el, "phase")}</td>
+                  <td data-label="Density">{displayValue(el, "density")}</td>
+                  <td data-label="Electronegativity">{displayValue(el, "electronegativity")}</td>
+                  <td data-label="Melting Point">{displayValue(el, "melt")}</td>
+                  <td data-label="Boiling Point">{displayValue(el, "boil")}</td>
                 </tr>
               );
             })}
@@ -275,9 +396,90 @@ export default function ListView({ onOpen }) {
         )}
       </div>
 
-      <p className="list-count">
-        {filtered.length} of {ELEMENTS.length} elements shown
-      </p>
+      <div className="list-footer">
+        <p className="list-count">
+          {filtered.length === 0
+            ? "0 elements"
+            : `Showing ${pageStart + 1}–${Math.min(pageStart + pageSize, filtered.length)} of ${filtered.length} elements`}
+        </p>
+
+        {totalPages > 1 && (
+          <nav className="list-pagination" aria-label="Table pagination">
+            <button
+              type="button"
+              className="list-page-btn"
+              onClick={() => goToPage(page - 1)}
+              disabled={page === 1}
+              aria-label="Previous page"
+            >
+              <FiChevronLeft />
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                type="button"
+                className={`list-page-num${p === page ? " is-active" : ""}`}
+                aria-current={p === page ? "page" : undefined}
+                onClick={() => goToPage(p)}
+              >
+                {p}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              className="list-page-btn"
+              onClick={() => goToPage(page + 1)}
+              disabled={page === totalPages}
+              aria-label="Next page"
+            >
+              <FiChevronRight />
+            </button>
+          </nav>
+        )}
+
+        <div className="list-page-size">
+          <span className="list-page-size__label">Rows</span>
+          <button
+            type="button"
+            ref={pageSizeBtnRef}
+            className={`list-page-size__btn${pageSizeOpen ? " is-open" : ""}`}
+            aria-haspopup="true"
+            aria-expanded={pageSizeOpen}
+            aria-label="Rows per page"
+            onClick={() => setPageSizeOpen((o) => !o)}
+          >
+            {activePageSizeLabel}
+            <FiChevronDown aria-hidden="true" />
+          </button>
+
+          {pageSizeOpen &&
+            createPortal(
+              <div className="td-popover td-popover--page-size" ref={pageSizePopRef} role="menu">
+                <div className="td-popover__body td-popover__body--plain">
+                  {PAGE_SIZE_OPTIONS.map((o) => {
+                    const active = pageSize === o.value;
+                    return (
+                      <button
+                        key={o.value}
+                        type="button"
+                        className={`td-item${active ? " is-active" : ""}`}
+                        role="menuitemradio"
+                        aria-checked={active}
+                        onClick={() => selectPageSize(o.value)}
+                      >
+                        <span className="td-item__label">{o.label}</span>
+                        <FiCheck className="td-item__check" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>,
+              document.body
+            )}
+        </div>
+      </div>
     </div>
   );
 }
