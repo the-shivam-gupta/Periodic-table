@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
-import { FiX } from "react-icons/fi";
 import useScrollLock from "../hooks/useScrollLock";
 import { animateDetailIn, animateDetailOut } from "../animations/modalAnimations";
 
