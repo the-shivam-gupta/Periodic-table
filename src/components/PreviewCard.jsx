@@ -1,23 +1,37 @@
-import { categoryColors, titleCategory } from "../data/categories";
+import { categoryColors, categoryAccent, categoryText, darkenRgbForText, titleCategory } from "../data/categories";
 import { formatSig } from "../data/propertyScale";
+
+// Pulls the first rgb()/rgba() color out of a gradient string — matches the
+// whole function call rather than splitting on commas, since the color
+// itself contains commas (see Element.jsx's firstGradientColor for the bug
+// that naive comma-splitting caused).
+function firstColor(gradient) {
+  const m = /rgba?\([^)]+\)/.exec(gradient || "");
+  return m ? m[0] : null;
+}
 
 const PreviewCard = ({ element, className, innerRef, background, glowColor, missing }) => {
   if (!element) return null;
 
   // Match whatever color this element is actually showing on the table —
-  // the active "Color by" heat/shade color when one is selected, otherwise
-  // its plain category gradient. The heat gradient's second stop is
-  // intentionally semi-transparent (it's designed to sit over an opaque
-  // grid cell), so pair it with an opaque backdrop color here rather than
-  // letting the page behind the card show through. When the element has no
-  // value for the active property, match the grid cell's own "missing"
-  // treatment (transparent, outlined) instead of falling back to a color.
+  // the active "Color by" heat color when one is selected, otherwise its
+  // plain category gradient. When the element has no value for the active
+  // property, match the grid cell's own "missing" treatment (transparent,
+  // outlined) instead of falling back to a color.
   const [from, to] = categoryColors(element.category);
   const backgroundImage = background || `linear-gradient(160deg, ${from}, ${to})`;
   // The glow ring follows the same source as the fill — the active heat
-  // color when one's selected, otherwise the plain category color — so it
-  // never disagrees with what the card is actually showing.
-  const glow = glowColor || to;
+  // color when one's selected, otherwise a saturated "ink" version of the
+  // category color (the pastel fill itself is too pale for a visible glow).
+  const glow = glowColor || categoryAccent(element.category);
+  // Text is tinted a dark shade of whatever color the card is actually
+  // showing — same treatment as a grid cell — instead of falling back to
+  // flat black once a "Color by" property replaces the category color.
+  const textColor = missing
+    ? null
+    : background
+      ? darkenRgbForText(firstColor(background))
+      : categoryText(element.category);
   const has = (v) => v !== null && v !== undefined;
 
   return (
@@ -28,9 +42,10 @@ const PreviewCard = ({ element, className, innerRef, background, glowColor, miss
         missing
           ? undefined
           : {
-              backgroundColor: "#151a26",
+              backgroundColor: "#ffffff",
               backgroundImage,
               "--preview-glow": glow,
+              ...(textColor ? { "--el-text": textColor } : null),
             }
       }
     >

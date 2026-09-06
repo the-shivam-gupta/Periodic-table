@@ -1,4 +1,5 @@
 @use "../utils/_variables" as *;
+@use "../utils/mixins" as *;
 
 // --- List / Properties view ---
 .list-view {
@@ -9,9 +10,9 @@
 }
 
 // One bordered strip housing the "Filter" label, the text filter and the
-// category select as a single control — rectangular (not the pill shape the
-// global jump-to-element search uses up top) so it reads as a table toolbar,
-// not a second search bar.
+// category/state/group/period selects as a single control — rectangular (not
+// the pill shape the global jump-to-element search uses up top) so it reads
+// as a table toolbar, not a second search bar.
 .list-toolbar {
   display: flex;
   align-items: stretch;
@@ -20,7 +21,8 @@
   margin-bottom: 16px;
   border: 1px solid $panel-border;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.035);
+  background: $card-bg;
+  box-shadow: $shadow-sm;
 }
 
 .list-toolbar__label {
@@ -46,13 +48,13 @@
   width: 1px;
   align-self: stretch;
   margin: 10px 0;
-  background: rgba(255, 255, 255, 0.1);
+  background: $panel-border;
 }
 
 .list-search {
   position: relative;
-  flex: 1 1 260px;
-  min-width: 200px;
+  flex: 1 1 220px;
+  min-width: 180px;
 }
 
 .list-search__input {
@@ -68,11 +70,11 @@
   outline: none;
 
   &::placeholder {
-    color: rgba(255, 255, 255, 0.38);
+    color: $text-faint;
   }
 
   &:focus {
-    background: rgba(255, 255, 255, 0.04);
+    background: $ink-04;
   }
 }
 
@@ -90,7 +92,7 @@
   height: 100%;
   padding: 13px 16px;
   border: none;
-  border-radius: 0 11px 11px 0;
+  border-left: 1px solid $panel-border;
   background: transparent;
   color: $text-primary;
   font-size: 14px;
@@ -101,18 +103,18 @@
   transition: box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: $ink-04;
   }
 
   &:focus,
   &:focus-visible {
-    box-shadow: inset 0 0 0 2px rgba(122, 167, 255, 0.55);
+    box-shadow: inset 0 0 0 2px $accent-soft;
   }
 
   &.is-open {
-    background: rgba($accent, 0.14);
-    color: #fff;
-    box-shadow: inset 0 0 0 2px rgba($accent, 0.55);
+    background: $accent-soft;
+    color: $accent-strong;
+    box-shadow: inset 0 0 0 2px rgba($accent, 0.4);
   }
 }
 
@@ -124,23 +126,30 @@
   text-overflow: ellipsis;
 }
 
+.list-cat-select__prefix {
+  color: $text-faint;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .list-cat-select__chevron {
   flex: none;
-  color: rgba(255, 255, 255, 0.5);
+  color: $text-faint;
   font-size: 16px;
   transition: transform 0.2s ease;
 
   .list-cat-select.is-open & {
     transform: rotate(180deg);
-    color: #fff;
+    color: $accent-strong;
   }
 }
 
 .list-scroll {
   border: 1px solid $panel-border;
   border-radius: 14px;
-  background: rgba(24, 30, 43, 0.55);
-  backdrop-filter: blur(6px);
+  background: $card-bg;
+  box-shadow: $shadow-sm;
 }
 
 .list-table {
@@ -153,7 +162,7 @@
     position: sticky;
     top: 0;
     z-index: 1;
-    background: #10141f;
+    background: $page-bg;
     padding: 12px 14px;
     text-align: left;
     font-family: $font-mono;
@@ -161,7 +170,7 @@
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: $text-faint;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid $panel-border;
     white-space: nowrap;
   }
 
@@ -170,16 +179,16 @@
     white-space: nowrap;
     font-family: $font-mono;
     font-size: 13.5px;
-    color: rgba(255, 255, 255, 0.8);
+    color: $text-muted;
   }
 
   tbody tr {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid $panel-border;
     cursor: pointer;
     transition: background-color 0.15s ease;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.06);
+      background: $ink-04;
     }
 
     &:last-child {
@@ -202,11 +211,11 @@
   cursor: pointer;
 
   &:hover {
-    color: #fff;
+    color: $text-primary;
   }
 
   &.is-sorted {
-    color: $accent;
+    color: $accent-strong;
   }
 }
 
@@ -217,7 +226,7 @@
   font-family: $font-body;
   font-size: 15px;
   font-weight: 500;
-  color: #fff;
+  color: $text-primary;
 }
 
 .list-swatch {
@@ -231,8 +240,7 @@
   font-family: $font-mono;
   font-size: 15px;
   font-weight: 700;
-  color: #fff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  color: $text-primary;
 }
 
 .list-empty {
@@ -284,8 +292,8 @@
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 
   &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.07);
-    color: #fff;
+    background: $ink-06;
+    color: $text-primary;
   }
 
   &:disabled {
@@ -295,9 +303,9 @@
 }
 
 .list-page-num.is-active {
-  background: rgba($accent, 0.16);
-  border-color: rgba($accent, 0.5);
-  color: #fff;
+  background: $accent-soft;
+  border-color: rgba($accent, 0.4);
+  color: $accent-strong;
 }
 
 .list-page-size {
@@ -325,8 +333,8 @@
   gap: 8px;
   padding: 7px 10px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid $panel-border-strong;
+  background: $card-bg;
   color: $text-primary;
   font-family: $font-mono;
   font-size: 12px;
@@ -337,36 +345,243 @@
 
   svg {
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.5);
+    color: $text-faint;
     transition: transform 0.2s ease;
   }
 
   &:hover {
-    border-color: rgba(255, 255, 255, 0.26);
-    background: rgba(255, 255, 255, 0.07);
+    background: $ink-04;
   }
 
   &:focus,
   &:focus-visible {
-    border-color: rgba(122, 167, 255, 0.55);
-    box-shadow: 0 0 0 3px rgba(122, 167, 255, 0.14);
+    border-color: rgba($accent, 0.5);
+    box-shadow: 0 0 0 3px $accent-soft;
   }
 
   &.is-open {
-    background: rgba($accent, 0.14);
-    border-color: rgba($accent, 0.55);
-    color: #fff;
-    box-shadow: 0 0 0 3px rgba($accent, 0.15);
+    background: $accent-soft;
+    border-color: rgba($accent, 0.4);
+    color: $accent-strong;
+    box-shadow: 0 0 0 3px rgba($accent, 0.12);
 
     svg {
       transform: rotate(180deg);
-      color: #fff;
+      color: $accent-strong;
     }
   }
 }
 
 .td-popover--page-size {
   width: 96px;
+}
+
+// --- Property Explorer (Properties view) ---
+// A left sidebar of property names + a right content pane showing the
+// selected property's description, a low→high gradient, and the same
+// periodic table used on the Table view, colored by that property.
+.property-explorer-view {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  border: 1px solid $panel-border;
+  border-radius: 18px;
+  background: $card-bg;
+  box-shadow: $shadow-sm;
+  overflow: hidden;
+}
+
+.property-nav {
+  flex: none;
+  width: 220px;
+  border-right: 1px solid $panel-border;
+  padding: 18px 10px;
+  background: $page-bg;
+}
+
+.property-nav__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px 14px;
+  font-family: $font-display;
+  font-size: 15px;
+  font-weight: 700;
+  color: $text-primary;
+
+  svg {
+    color: $accent-strong;
+    font-size: 16px;
+  }
+}
+
+.property-nav__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.property-nav__item {
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: $text-muted;
+  font-family: $font-body;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease;
+
+  &:hover {
+    color: $text-primary;
+    background: $ink-04;
+  }
+
+  &.is-active {
+    background: $accent-soft;
+    color: $accent-strong;
+    font-weight: 700;
+  }
+}
+
+.property-content {
+  flex: 1;
+  min-width: 0;
+  padding: 24px 28px 28px;
+}
+
+.property-content__title {
+  font-family: $font-display;
+  font-size: 22px;
+  font-weight: 700;
+  color: $text-primary;
+  margin-bottom: 6px;
+}
+
+.property-content__desc {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: $text-muted;
+  max-width: 70ch;
+  margin-bottom: 18px;
+}
+
+.property-content__gradient {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: $font-mono;
+  font-size: 12px;
+  color: $text-faint;
+  margin-bottom: 20px;
+}
+
+.property-content__end {
+  flex: none;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 10.5px;
+}
+
+.property-content__bar {
+  flex: 1;
+  height: 10px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px $panel-border-strong;
+}
+
+.property-content__note {
+  padding: 12px 14px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  background: $page-bg;
+  border: 1px solid $panel-border;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: $text-muted;
+  max-width: 70ch;
+}
+
+.property-content__values {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  background: $page-bg;
+  border: 1px solid $panel-border;
+}
+
+.property-content__values-label {
+  font-family: $font-mono;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: $text-faint;
+}
+
+.property-content__swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.property-content__swatch-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: $text-primary;
+}
+
+.property-content__swatch {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.14);
+}
+
+// Scaled to fit the available width so the whole table is visible in one
+// view, no horizontal scrolling needed — .property-content__table-scale is
+// the table's natural (unscaled) size, CSS-transformed down to fit; the
+// outer wrapper's height is set in JS to match the *scaled* size so it never
+// leaves extra blank space below.
+.property-content__table-outer {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.property-content__table-scale {
+  width: max-content;
+  transform-origin: top left;
+  will-change: transform;
+}
+
+@include media('tablet') {
+  .property-explorer-view {
+    flex-direction: column;
+  }
+
+  .property-nav {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid $panel-border;
+  }
+
+  .property-nav__list {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .property-content {
+    padding: 20px;
+  }
 }
 
 @media (max-width: 620px) {
@@ -383,8 +598,8 @@
   }
 }
 
-@media (max-width: 1220px){
-  .list-scroll{
+@media (max-width: 1220px) {
+  .list-scroll {
     overflow-x: auto;
   }
 }
@@ -394,7 +609,7 @@
     overflow-x: visible;
     background: transparent;
     border: none;
-    backdrop-filter: none;
+    box-shadow: none;
   }
 
   .list-table {
@@ -414,7 +629,7 @@
 
     tr {
       display: block;
-      background: rgba(24, 30, 43, 0.55);
+      background: $card-bg;
       border: 1px solid $panel-border;
       border-radius: 14px;
       overflow: hidden;
@@ -436,7 +651,7 @@
       width: 100%;
       white-space: normal;
       padding: 9px 14px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid $panel-border;
 
       &::before {
         content: attr(data-label);
@@ -455,8 +670,8 @@
 
   .list-cell--name {
     padding: 12px 14px !important;
-    background: rgba(255, 255, 255, 0.03);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.09) !important;
+    background: $page-bg;
+    border-bottom: 1px solid $panel-border !important;
 
     &::before {
       content: none;

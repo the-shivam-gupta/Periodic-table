@@ -10,8 +10,8 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(4, 7, 13, 0.74);
-  backdrop-filter: blur(7px);
+  background: $overlay-scrim;
+  backdrop-filter: blur(4px);
 }
 
 .detail-card {
@@ -20,11 +20,37 @@
   max-height: 90vh;
   overflow-y: auto;
   border-radius: 20px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015) 40%),
-    #121725;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 45px 110px -30px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  background: $card-bg;
+  border: 1px solid $panel-border;
+  box-shadow: $shadow-lg;
   color: $text-primary;
+}
+
+// --- Element detail drawer (a side panel, not a centered dialog) ---
+// The overlay backdrop still covers the full viewport (click it to close),
+// but the card itself is pinned to the right edge, full height, like a
+// slide-out inspector rather than a popup.
+.explorer-overlay {
+  justify-content: flex-end;
+  align-items: stretch;
+  padding: 0;
+  background: rgba(15, 23, 42, 0.32);
+  backdrop-filter: none;
+}
+
+.explorer-card {
+  // Wide enough that all five section tabs sit on one row without needing
+  // to scroll (520px left "Applications" without room) — the drawer only
+  // needs to clear a viewport pinch-point, not stay as narrow as possible.
+  width: min(640px, 100vw);
+  max-width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
+  border-radius: 0;
+  border-top: none;
+  border-bottom: none;
+  border-right: none;
+  box-shadow: -24px 0 60px -30px rgba(15, 23, 42, 0.3);
 }
 
 .detail-close {
@@ -35,8 +61,8 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid $panel-border-strong;
+  background: $card-bg;
   color: $text-primary;
   font-size: 22px;
   line-height: 1;
@@ -48,7 +74,7 @@
 
   &:hover,
   &:focus-visible {
-    background: rgba(255, 255, 255, 0.14);
+    background: $ink-06;
 
     .detail-close__cross {
       opacity: 0;
@@ -81,8 +107,110 @@
   align-items: center;
   gap: 22px;
   padding: 30px 32px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid $panel-border;
   flex-wrap: wrap;
+}
+
+// --- Drawer breadcrumb bar: back + "Elements / Name" + favorite/share ---
+.explorer-breadcrumb {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid $panel-border;
+}
+
+.explorer-breadcrumb__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: transparent;
+  color: $text-muted;
+  font-family: $font-body;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 0;
+
+  svg {
+    flex: none;
+    font-size: 16px;
+    transition: transform 0.2s ease;
+
+    // On mobile the drawer is a bottom sheet (see .explorer-card's own
+    // tablet override below), dismissed by swiping it back down rather
+    // than sliding it back out to the right — the back arrow points down
+    // to match, instead of the desktop drawer's left-pointing "back" arrow.
+    @include media('tablet') {
+      transform: rotate(-90deg);
+    }
+  }
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &:hover {
+    color: $text-primary;
+  }
+}
+
+.explorer-breadcrumb__sep {
+  color: $text-faint;
+  margin: 0 2px;
+}
+
+.explorer-breadcrumb__actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+
+.explorer-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: $text-muted;
+  font-size: 16px;
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+
+  &:hover {
+    color: $text-primary;
+    background: $ink-06;
+  }
+
+  &.is-active {
+    color: $warning;
+
+    svg {
+      fill: $warning;
+    }
+  }
+}
+
+.explorer-share-toast {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: $text-primary;
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 // Thin category-colored strip along the very top of the card, tying the
@@ -93,44 +221,13 @@
   left: 0;
   right: 0;
   height: 3px;
-}
 
-.detail-symbol-block {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.detail-symbol {
-  font-family: $font-display;
-  font-size: 68px;
-  font-weight: 700;
-  line-height: 0.95;
-}
-
-.detail-mass {
-  font-family: $font-mono;
-  font-size: 13px;
-  color: $text-faint;
-  margin-top: 8px;
-}
-
-.detail-titles {
-  min-width: 150px;
-}
-
-.detail-number {
-  font-family: $font-mono;
-  font-size: 13px;
-  color: $text-faint;
-}
-
-.detail-name {
-  font-family: $font-display;
-  font-size: 38px;
-  font-weight: 700;
-  line-height: 1.05;
-  margin: 2px 0 8px;
+  // No value for the active "Color by" property on this element — leave the
+  // strip blank instead of a color, matching the grid cell's own "missing"
+  // treatment.
+  &.is-missing {
+    background: transparent;
+  }
 }
 
 .detail-category {
@@ -140,29 +237,14 @@
   text-transform: uppercase;
   padding: 5px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.85);
+  color: $text-primary;
   font-family: $font-mono;
-}
-
-// Tinted with the element's own category color (inline `background`/
-// `border-color`) so the category reads clearly at a glance instead of
-// blending into a flat neutral pill.
-.explorer-category-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: #fff;
   font-weight: 600;
-}
 
-.explorer-category-chip__dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  flex: none;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+  &.is-missing {
+    background: $card-bg;
+    box-shadow: inset 0 0 0 1px $panel-border-strong;
+  }
 }
 
 .detail-body {
@@ -178,17 +260,17 @@
   align-items: center;
   gap: 8px;
   font-family: $font-display;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: $text-faint;
+  letter-spacing: 0.06em;
+  color: $text-muted;
   margin-bottom: 12px;
 }
 
 .detail-section-title__icon {
   flex: none;
-  font-size: 15px;
+  font-size: 14px;
   opacity: 0.75;
 }
 
@@ -206,7 +288,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 10px 2px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid $panel-border;
 
   &:last-child {
     border-bottom: none;
@@ -239,52 +321,19 @@
   font-weight: 500;
   font-family: $font-mono;
   word-break: break-word;
+  color: $text-primary;
 }
 
 .detail-summary {
   font-size: var(--text-md);
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.85);
+  color: $text-primary;
 }
 
-.detail-config {
-  font-family: $font-mono;
-  font-size: 14px;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.78);
-  word-break: break-word;
-}
-
-.detail-config--short {
-  margin-top: 6px;
-  font-size: 15px;
-  color: $accent;
-}
-
-.detail-shells {
-  margin-top: 10px;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.72);
-  font-family: $font-mono;
-}
-
-.detail-source {
-  display: inline-block;
-  margin-top: 24px;
-  padding: 12px 20px;
-  border-radius: 999px;
-  background: rgba(122, 167, 255, 0.14);
-  border: 1px solid rgba(122, 167, 255, 0.35);
-  color: #cfe0ff;
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: background-color 0.2s ease, transform 0.2s ease;
-
-  &:hover {
-    background: rgba(122, 167, 255, 0.24);
-    transform: translateY(-1px);
-  }
+.explorer-not-available {
+  font-size: 14.5px;
+  font-style: italic;
+  color: $text-faint;
 }
 
 @include media('tablet') {
@@ -308,12 +357,24 @@
     padding: 16px 20px 24px;
   }
 
-  .detail-symbol {
-    font-size: 58px;
+  // The explorer drawer is a right-side slide-out panel at desktop width
+  // (see .explorer-overlay/.explorer-card above), but on a narrow screen a
+  // panel pinned to one edge with the full remaining width behind it reads
+  // wrong — it becomes a bottom sheet instead, like every other modal here.
+  // Undoes the explorer's own unconditional right-panel-specific styling
+  // (full-height, no top/bottom border, a shadow that bleeds sideways) that
+  // the rules above don't otherwise touch.
+  .explorer-overlay {
+    justify-content: center;
   }
 
-  .detail-name {
-    font-size: 32px;
+  .explorer-card {
+    height: auto;
+    border-top: 1px solid $panel-border;
+    border-bottom: none;
+    border-right: 1px solid $panel-border;
+    border-left: 1px solid $panel-border;
+    box-shadow: 0 -20px 48px -24px rgba(15, 23, 42, 0.3);
   }
 }
 
@@ -339,16 +400,31 @@
 
 .explorer-symbol-block {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 14px;
   flex-wrap: wrap;
 }
 
 .explorer-symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 16px;
   font-family: $font-display;
-  font-size: 64px;
+  font-size: 38px;
   font-weight: 700;
-  line-height: 0.9;
+  line-height: 1;
+
+  // Same "missing" treatment as the grid cell and the hover preview card:
+  // no value for the active "Color by" property, so no color — a plain
+  // outlined swatch instead of quietly falling back to the category tint.
+  &.is-missing {
+    background: $card-bg;
+    color: #000;
+    box-shadow: inset 0 0 0 1px $panel-border-strong;
+  }
 }
 
 .explorer-name {
@@ -356,6 +432,7 @@
   font-size: 31px;
   font-weight: 700;
   line-height: 1.05;
+  color: $text-primary;
 }
 
 .explorer-quick {
@@ -372,8 +449,8 @@
   gap: 3px;
   padding: 6px 12px;
   border-radius: 9px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: $page-bg;
+  border: 1px solid $panel-border;
 
   .explorer-chip__label {
     font-family: $font-mono;
@@ -386,26 +463,153 @@
   .explorer-chip__value {
     font-size: 15px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.92);
+    color: $text-primary;
   }
 }
 
-.explorer-layout {
+// Always-visible quick stat row (matches the reference's property grid) —
+// shown above the tabs, regardless of which tab is active. Two columns by
+// default since the drawer itself is narrow (not the old wide centered
+// modal) — three would cramp every label onto its own line.
+.explorer-stat-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
-  gap: 28px;
-  align-items: start;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: $panel-border;
+  border: 1px solid $panel-border;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 0 32px 8px;
+
+  .fact {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 14px 16px;
+    border-bottom: none;
+    background: $card-bg;
+  }
+
+  .fact__value {
+    text-align: left;
+    font-size: 16px;
+    font-weight: 600;
+    color: $text-primary;
+  }
+}
+
+// --- Section tabs (Overview / Properties / Isotopes / Compounds / Applications) ---
+// A flat underline bar rather than a shared pill shell. It must never wrap:
+// whether a tab wraps to its own second line depends on exactly how much
+// horizontal room five labels' combined width leaves — which shifted from
+// one tab to the next here, because switching tabs changes the content
+// height below, which toggles the panel's vertical scrollbar, which changes
+// the *horizontal* space left for this row. Same five labels, different
+// wrap result per tab. flex-wrap: nowrap plus a horizontal scroll makes the
+// row's own layout independent of that, so it looks identical every time;
+// the scrollbar stays natively visible (never hidden) so on a panel too
+// narrow to fit all five, it's an obvious "there's more" cue rather than a
+// silent clip.
+.explorer-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px 22px;
+  margin-bottom: 20px;
+  padding-bottom: 1px; // keeps the native scrollbar off the border-bottom rule
+  border-bottom: 1px solid $panel-border;
+  overflow-x: auto;
+}
+
+.explorer-tab {
+  position: relative;
+  flex: none;
+  padding: 10px 2px 12px;
+  border: none;
+  background: transparent;
+  color: $text-muted;
+  font-family: $font-body;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.18s ease;
+
+  // The active indicator, drawn as a pseudo-element rather than a border so
+  // it can sit flush on the shared bottom rule (a real border would add its
+  // own box-height and misalign between tabs).
+  &::after {
+    content: "";
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    bottom: -1px;
+    height: 2px;
+    border-radius: 2px;
+    background: transparent;
+    transition: background-color 0.18s ease;
+  }
+
+  &:hover {
+    color: $text-primary;
+  }
+
+  &.is-active {
+    color: $accent-strong;
+
+    &::after {
+      background: $accent-strong;
+    }
+  }
 }
 
 .explorer-main {
   min-width: 0;
+
+  .detail-section:first-child {
+    margin-top: 0;
+  }
 }
 
-.explorer-side {
+// Visualization strip: where this element sits on the current property's
+// low-to-high scale.
+.explorer-viz__label {
+  font-family: $font-mono;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: $text-muted;
+  margin-bottom: 10px;
+}
+
+.explorer-viz {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $text-faint;
+}
+
+.explorer-viz__end {
+  flex: none;
+}
+
+.explorer-viz__bar {
+  position: relative;
+  flex: 1;
+  height: 10px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px $panel-border-strong;
+}
+
+.explorer-viz__marker {
+  position: absolute;
+  top: 50%;
+  width: 3px;
+  height: 18px;
+  border-radius: 999px;
+  background: $text-primary;
+  box-shadow: 0 0 0 2px #fff;
+  transform: translate(-50%, -50%);
 }
 
 .explorer-figure {
@@ -415,8 +619,8 @@
   flex-direction: column;
   gap: 10px;
   border-radius: 16px;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: $page-bg;
+  border: 1px solid $panel-border;
 }
 
 // Photo / 3D Model switch — only rendered when both assets exist for an
@@ -426,7 +630,7 @@
   gap: 4px;
   padding: 3px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
+  background: $ink-04;
 }
 
 .explorer-figure-tab {
@@ -444,15 +648,13 @@
   transition: background-color 0.2s ease, color 0.2s ease;
 
   &:hover {
-    color: rgba(255, 255, 255, 0.85);
+    color: $text-primary;
   }
 
   &.is-active {
-    // Same color as the element symbol (--figure-tab-active, set inline per
-    // element on .explorer-figure-tabs) — falls back to the plain accent
-    // tint if that variable isn't set for some reason.
-    background: var(--figure-tab-active, #{rgba($accent, 0.18)});
-    color: #fff;
+    background: $card-bg;
+    color: $accent-strong;
+    box-shadow: $shadow-sm;
   }
 }
 
@@ -472,7 +674,7 @@
   align-items: center;
   justify-content: center;
   min-height: 200px;
-  background: rgba(255, 255, 255, 0.04);
+  background: $ink-04;
   border-radius: 10px;
 }
 
@@ -481,8 +683,11 @@
   min-height: 240px;
   border-radius: 10px;
   overflow: hidden;
-  background: radial-gradient(120% 120% at 50% 20%, rgba(255, 255, 255, 0.06), transparent 60%),
-    rgba(255, 255, 255, 0.04);
+  // The model's orbit rings and electrons render in pale, low-opacity tones
+  // (built into the 3D asset itself, so they can't be recolored from here) —
+  // on the same near-white wash the photo tab uses ($ink-04) they all but
+  // vanish. A dark backdrop is the only lever we have to keep them visible.
+  background: $text-primary;
 
   model-viewer {
     width: 100%;
@@ -510,14 +715,13 @@
     font-family: $font-display;
     font-size: 68px;
     font-weight: 700;
-    color: #fff;
-    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.45);
+    color: $text-primary;
   }
 
   em {
     font-style: normal;
     font-size: 12.5px;
-    color: rgba(255, 255, 255, 0.72);
+    color: $text-muted;
   }
 }
 
@@ -532,8 +736,8 @@
   padding-top: 12px;
   font-size: 15px;
   line-height: 1.5;
-  color: rgba(255, 255, 255, 0.78);
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  color: $text-primary;
+  border-top: 1px solid $panel-border;
 
   .fact__label {
     margin-right: 6px;
@@ -560,7 +764,7 @@
   align-items: center;
   gap: 6px;
   font-size: 14px;
-  color: #cfe0ff;
+  color: $accent-strong;
   text-decoration: none;
   max-width: 100%;
   word-break: break-all;
@@ -582,12 +786,14 @@
 }
 
 @include media('tablet') {
-  .explorer-layout {
-    grid-template-columns: 1fr;
+  .explorer-stat-grid {
+    margin: 0 20px 8px;
   }
 
   .explorer-symbol {
-    font-size: 52px;
+    width: 62px;
+    height: 62px;
+    font-size: 30px;
   }
 
   .explorer-name {

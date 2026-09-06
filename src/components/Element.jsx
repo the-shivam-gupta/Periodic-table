@@ -3,13 +3,17 @@ import gsap from "gsap";
 import { hoverEnter, hoverLeave } from "../animations/elementAnimations";
 import { prefersReducedMotion } from "../animations/usePrefersReducedMotion";
 import { formatSig } from "../data/propertyScale";
-import { categoryColors } from "../data/categories";
+import { categoryAccent, categoryText, darkenRgbForText } from "../data/categories";
 
-// Pulls the first color out of a "linear-gradient(160deg, C1, C2)" string
-// (as produced by heatStyleFor) so the hover glow can match it.
+// Pulls the first rgb()/rgba() color out of a "linear-gradient(160deg, C1,
+// C2)" string (as produced by heatStyleFor) so the hover glow and cell text
+// can match it. Matches the whole rgb(...)/rgba(...) function call rather
+// than splitting on commas — the color itself contains commas (e.g.
+// "rgb(163, 230, 214)"), so a naive comma-split only ever captured a
+// truncated fragment like "rgb(163".
 function firstGradientColor(gradient) {
-  const m = /linear-gradient\([^,]+,\s*([^,]+),/.exec(gradient || "");
-  return m ? m[1].trim() : null;
+  const m = /rgba?\([^)]+\)/.exec(gradient || "");
+  return m ? m[0] : null;
 }
 
 function Element({
@@ -100,13 +104,23 @@ function Element({
     }
   }, [heat]);
 
-  // The hover glow matches whatever color this cell is actually showing —
-  // the active heat color when "Color by" is on, otherwise its own category
-  // color — instead of one flat color shared by every element.
+  // The hover glow matches whatever this cell is actually showing — the
+  // active heat color when "Color by" is on, otherwise a saturated "ink"
+  // version of its category color (the pastel fill itself is too pale to
+  // make a visible glow ring) — instead of one flat color shared by every
+  // element.
   const glowColor = useMemo(
-    () => firstGradientColor(heat) || categoryColors(data.category)[0],
+    () => firstGradientColor(heat) || categoryAccent(data.category),
     [heat, data.category]
   );
+
+  // The category badge only reveals itself on hover as a little bonus hint
+  // when it isn't already persistently shown — but that hint shares the same
+  // bottom-of-cell slot as a "Color by" property's value, so it must stay
+  // suppressed whenever this cell is actually showing one (regardless of the
+  // separate "Show Categories" toggle), or the two render on top of each
+  // other on hover.
+  const suppressBadge = showCategories || valueText != null;
 
   const handleEnter = () => {
     if (!canHoverRef.current) return;
@@ -116,7 +130,7 @@ function Element({
       number: numberRef.current,
       symbol: symbolRef.current,
       name: nameRef.current,
-      badge: showCategories ? null : badgeRef.current,
+      badge: suppressBadge ? null : badgeRef.current,
       glowColor,
     });
   };
@@ -129,9 +143,20 @@ function Element({
       number: numberRef.current,
       symbol: symbolRef.current,
       name: nameRef.current,
-      badge: showCategories ? null : badgeRef.current,
+      badge: suppressBadge ? null : badgeRef.current,
     });
   };
+
+  // Cell text is tinted a dark shade of whatever color the cell is actually
+  // showing — the category's own hue by default, or a dark shade of the
+  // exact point on the "Color by" gradient once a property is active — so
+  // text never falls back to flat black just because a property replaced
+  // the category color.
+  const textColor = missing
+    ? null
+    : heat
+      ? darkenRgbForText(firstGradientColor(heat))
+      : categoryText(data.category);
 
   return (
     <div
@@ -139,6 +164,7 @@ function Element({
       className={`element-cell ${color}${dimmed ? " is-dimmed" : ""}${
         missing ? " is-missing" : ""
       }`}
+      style={textColor ? { "--el-text": textColor } : undefined}
       title={tip}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}

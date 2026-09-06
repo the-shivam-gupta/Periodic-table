@@ -1,4 +1,5 @@
 @use "../utils/_variables" as *;
+@use "../utils/mixins" as *;
 
 // --- Game ---
 .game {
@@ -7,71 +8,154 @@
   margin: 0 auto;
 }
 
-// --- Intro / "ready to play?" gate shown before a round starts ---
-.game--intro {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 420px;
+// --- Landing: pick a game ---
+.game--landing {
+  width: 100%;
 }
 
-.game-intro {
+.game-landing__head {
+  text-align: center;
+  max-width: 620px;
+  margin: 0 auto 32px;
+}
+
+.game-landing__eyebrow {
+  font-family: $font-mono;
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: $accent-strong;
+  margin-bottom: 8px;
+}
+
+.game-landing__title {
+  font-family: $font-display;
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  color: $text-primary;
+  margin-bottom: 8px;
+}
+
+.game-landing__subtitle {
+  font-size: 16px;
+  color: $text-muted;
+}
+
+// Bordered panel housing the game-card grid, matching the reference's
+// "Learn Through Play" card.
+.games-panel {
+  padding: 28px;
+  border-radius: 20px;
+  border: 1px solid $panel-border;
+  background: $card-bg;
+  box-shadow: $shadow-sm;
+}
+
+.game-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+@include media('tablet') {
+  .game-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@include media('mobile') {
+  .game-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Each card carries its own accent color (--game-accent, set inline per
+// game) — the icon, difficulty pill and Play button all key off it, so
+// every game reads as its own consistent color instead of one flat blue
+// repeated six times.
+.game-card {
+  --card-accent: var(--game-accent, #{$accent});
+
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-  max-width: 560px;
-  padding: 40px 32px;
   text-align: center;
+  gap: 6px;
+  padding: 24px 20px;
+  border-radius: 16px;
   border: 1px solid $panel-border;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--card-accent) 6%, #{$card-bg});
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-md;
+  }
 }
 
-.game-intro__eyebrow {
-  font-family: $font-mono;
-  font-size: 12.5px;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: $text-faint;
-}
-
-.game-intro__title {
-  font-family: $font-display;
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  line-height: 1.2;
-  margin: 0;
-}
-
-.game-intro__hint {
-  font-size: 14px;
-  color: $text-faint;
-  margin: 0;
-}
-
-.game-intro__modes {
+.game-card__icon {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  margin: 10px 0 6px;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card-accent) 18%, transparent);
+  color: var(--card-accent);
+  font-size: 22px;
+  margin-bottom: 6px;
 }
 
-.game-intro__play {
-  padding: 13px 36px;
+.game-card__name {
+  font-family: $font-display;
+  font-size: 17px;
+  font-weight: 700;
+  color: $text-primary;
+}
+
+.game-card__desc {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: $text-muted;
+}
+
+.game-card__difficulty {
+  margin-top: 4px;
+  padding: 3px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(122, 167, 255, 0.45);
-  background: rgba(122, 167, 255, 0.16);
-  color: #d7e5ff;
-  font-size: 16px;
+  background: $page-bg;
+  border: 1px solid $panel-border;
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $text-faint;
+}
+
+.game-card__best {
+  font-family: $font-mono;
+  font-size: 12px;
+  color: $text-faint;
+  margin-bottom: 4px;
+}
+
+.game-card__play {
+  margin-top: 4px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1.5px solid var(--card-accent, #{$accent});
+  background: color-mix(in srgb, var(--card-accent, #{$accent}) 10%, #{$card-bg});
+  color: var(--card-accent, #{$accent});
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.2s ease;
 
   &:hover {
-    background: rgba(122, 167, 255, 0.28);
+    background: color-mix(in srgb, var(--card-accent, #{$accent}) 20%, #{$card-bg});
     transform: translateY(-1px);
   }
 }
 
+// --- In-game top bar ---
 .game__top {
   display: flex;
   align-items: center;
@@ -81,38 +165,31 @@
   margin: 0 12px 20px;
 }
 
-.game__modes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.game-mode-pill {
+.game-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   padding: 9px 16px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 14px;
-  font-family: $font-body;
-  font-weight: 500;
+  border-radius: 999px;
+  border: 1px solid $panel-border-strong;
+  background: $card-bg;
+  color: $text-muted;
+  font-size: 13.5px;
+  font-weight: 600;
   cursor: pointer;
-  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease,
-    transform 0.2s ease;
+  transition: color 0.2s ease, background-color 0.2s ease;
 
   &:hover {
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.28);
-    transform: translateY(-1px);
+    color: $text-primary;
+    background: $ink-04;
   }
+}
 
-  &.is-active {
-    background: #fff;
-    color: #0b101a;
-    border-color: #fff;
-    font-weight: 700;
-    box-shadow: 0 10px 26px -12px rgba(255, 255, 255, 0.45);
-  }
+.game__top-title {
+  font-family: $font-display;
+  font-size: 17px;
+  font-weight: 700;
+  color: $text-primary;
 }
 
 .game__stats {
@@ -126,7 +203,7 @@
   align-items: center;
   min-width: 76px;
   padding: 9px 18px;
-  background: rgba(255, 255, 255, 0.04);
+  background: $card-bg;
   border: 1px solid $panel-border;
   border-radius: 8px;
 
@@ -143,6 +220,7 @@
     font-size: 27px;
     font-weight: 700;
     line-height: 1.15;
+    color: $text-primary;
   }
 }
 
@@ -170,6 +248,7 @@
     font-weight: 700;
     line-height: 1.2;
     overflow-wrap: break-word;
+    color: $text-primary;
   }
 
   .game-prompt__symbol {
@@ -179,8 +258,7 @@
     font-size: 76px;
     font-weight: 700;
     line-height: 1;
-    color: $accent;
-    text-shadow: 0 0 34px rgba(122, 167, 255, 0.55);
+    color: $accent-strong;
   }
 
   .game-prompt__hint {
@@ -201,21 +279,53 @@
   font-weight: 600;
 
   &.game-feedback--ok {
-    background: rgba(74, 222, 128, 0.14);
-    color: #7bedac;
-    border: 1px solid rgba(74, 222, 128, 0.4);
+    background: $success-soft;
+    color: $success;
+    border: 1px solid rgba($success, 0.35);
   }
 
   &.game-feedback--no {
-    background: rgba(248, 113, 113, 0.14);
-    color: #fca5a5;
-    border: 1px solid rgba(248, 113, 113, 0.4);
+    background: $danger-soft;
+    color: $danger;
+    border: 1px solid rgba($danger, 0.35);
   }
 
   &.game-feedback--time {
-    background: rgba(251, 191, 36, 0.14);
-    color: #fcd34d;
-    border: 1px solid rgba(251, 191, 36, 0.4);
+    background: $warning-soft;
+    color: $warning;
+    border: 1px solid rgba($warning, 0.35);
+  }
+}
+
+// The "why" explanation shown after every answer — keeps the game useful for
+// revision, not just entertainment.
+.game-explain {
+  max-width: 80%;
+  margin: 14px auto 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: $text-muted;
+}
+
+// Shown alongside the explanation once an answer is locked in — the player
+// advances on their own instead of the next question sliding in on a timer,
+// so there's time to actually read the explanation above.
+.game-next-btn {
+  display: block;
+  margin: 18px auto 0;
+  padding: 11px 26px;
+  border-radius: 999px;
+  border: 1px solid rgba($accent, 0.4);
+  background: $accent;
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    background: $accent-strong;
+    transform: translateY(-1px);
   }
 }
 
@@ -231,8 +341,8 @@
   position: relative;
   padding: 20px 24px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid $panel-border;
+  background: $card-bg;
   color: $text-primary;
   cursor: pointer;
   display: flex;
@@ -241,23 +351,23 @@
   gap: 5px;
   text-align: center;
   font-family: $font-body;
+  box-shadow: $shadow-sm;
   transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 
   &:hover:not(.is-correct):not(.is-wrong) {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.28);
+    background: $ink-04;
+    border-color: $panel-border-strong;
     transform: translateY(-2px);
   }
 
   &.is-correct {
-    background: rgba(74, 222, 128, 0.16);
-    border-color: rgba(74, 222, 128, 0.55);
-    box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.2), 0 0 22px rgba(74, 222, 128, 0.25);
+    background: $success-soft;
+    border-color: rgba($success, 0.5);
   }
 
   &.is-wrong {
-    background: rgba(248, 113, 113, 0.15);
-    border-color: rgba(248, 113, 113, 0.55);
+    background: $danger-soft;
+    border-color: rgba($danger, 0.5);
   }
 
   .game-option__name {
@@ -294,8 +404,8 @@
     width: min(270px, 100%);
     padding: 14px 20px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid $panel-border-strong;
+    background: $card-bg;
     color: $text-primary;
     font-size: 17px;
     font-family: $font-body;
@@ -307,24 +417,24 @@
     }
 
     &:focus {
-      border-color: rgba(122, 167, 255, 0.55);
-      box-shadow: 0 0 0 3px rgba(122, 167, 255, 0.14);
+      border-color: rgba($accent, 0.5);
+      box-shadow: 0 0 0 3px $accent-soft;
     }
   }
 
   .game-rush__submit {
     padding: 14px 28px;
     border-radius: 999px;
-    border: 1px solid rgba(122, 167, 255, 0.45);
-    background: rgba(122, 167, 255, 0.16);
-    color: #d7e5ff;
+    border: 1px solid rgba($accent, 0.4);
+    background: $accent;
+    color: #fff;
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.2s ease, transform 0.2s ease;
 
     &:hover:not(:disabled) {
-      background: rgba(122, 167, 255, 0.28);
+      background: $accent-strong;
       transform: translateY(-1px);
     }
 
@@ -337,14 +447,14 @@
   .game-rush__skip {
     padding: 14px 24px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid $panel-border-strong;
+    background: $card-bg;
+    color: $text-muted;
     font-size: 14px;
     cursor: pointer;
 
     &:hover:not(:disabled) {
-      color: #fff;
+      color: $text-primary;
     }
 
     &:disabled {
@@ -360,14 +470,14 @@
   height: 10px;
   margin: 18px auto 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: $ink-08;
 
   .game-timer__bar {
     display: block;
     height: 100%;
     width: 100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, #7aa7ff, #ffd76a);
+    background: linear-gradient(90deg, $accent, $warning);
   }
 
   .game-timer__text {
@@ -379,5 +489,93 @@
     font-size: 13px;
     font-weight: 600;
     color: $text-faint;
+  }
+}
+
+// --- Memory Match ---
+.game-memory__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 12px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.game-memory-card {
+  position: relative;
+  height: 92px;
+  border-radius: 12px;
+  border: 1px solid $panel-border-strong;
+  background: $card-bg;
+  cursor: pointer;
+  box-shadow: $shadow-sm;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  .game-memory-card__face {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: inherit;
+    font-family: $font-body;
+    font-weight: 700;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .game-memory-card__face--back {
+    background: $page-bg;
+    color: $text-faint;
+    font-size: 22px;
+  }
+
+  .game-memory-card__face--front {
+    background: $accent-soft;
+    color: $accent-strong;
+    font-size: 14px;
+    opacity: 0;
+  }
+
+  &.is-flipped {
+    border-color: rgba($accent, 0.4);
+
+    .game-memory-card__face--back {
+      opacity: 0;
+    }
+    .game-memory-card__face--front {
+      opacity: 1;
+    }
+  }
+
+  &.is-matched {
+    border-color: rgba($success, 0.45);
+
+    .game-memory-card__face--front {
+      background: $success-soft;
+      color: $success;
+    }
+  }
+}
+
+.game-memory__done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+@include media('mobile') {
+  .game-memory__grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }

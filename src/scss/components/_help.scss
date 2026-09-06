@@ -1,0 +1,67 @@
+@use "../utils/_variables" as *;
+
+// --- Help / About modal ---
+// Reuses .detail-overlay / .detail-card / .detail-close / .detail-header /
+// .detail-body / .detail-section chrome from _detail-panel.scss; these rules
+// only add the help-specific content styling.
+.help-card {
+  max-width: 640px;
+}
+
+.help-header {
+  padding: 32px 32px 8px;
+}
+
+.help-eyebrow {
+  font-family: $font-mono;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: $accent;
+  margin-bottom: 8px;
+}
+
+.help-title {
+  font-family: $font-display;
+  font-size: 26px;
+  font-weight: 700;
+  color: $text-primary;
+  margin-bottom: 8px;
+}
+
+.help-subtitle {
+  font-size: 15px;
+  line-height: 1.6;
+  color: $text-muted;
+  max-width: 52ch;
+}
+
+.help-body {
+  padding: 12px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.help-section {
+  padding-bottom: 18px;
+  border-bottom: 1px solid $panel-border;
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+.help-section__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: $text-primary;
+  margin-bottom: 6px;
+}
+
+.help-section__body {
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: $text-muted;
+}

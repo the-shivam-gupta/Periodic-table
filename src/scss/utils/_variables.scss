@@ -1,12 +1,40 @@
 // --- Theme / Base ---
-$page-bg: #0a0e16;             // deep space navy
-$panel-bg: rgba(24, 30, 43, 0.92);
-$card-bg: #151a26;
-$text-primary: #f4f7fb;
-$text-muted: rgba(255, 255, 255, 0.66);
-$text-faint: rgba(255, 255, 255, 0.5);
-$panel-border: rgba(255, 255, 255, 0.1);
-$accent: #7aa7ff;              // soft science blue
+// Light, calm, educational palette — soft off-white page, white cards, dark
+// navy/charcoal text, one muted blue accent + one soft teal secondary accent.
+$page-bg: #f3f5f8; // soft off-white / very light gray
+$page-bg-alt: #eef1f6;
+$panel-bg: #ffffff;
+$panel-bg-soft: #fafbfd; // table panel — a hair off pure white so pastel cells read clearly
+$card-bg: #ffffff;
+$text-primary: #1b2430; // dark navy / charcoal
+$text-muted: #5b6472; // slate gray
+$text-faint: #8a93a1;
+$panel-border: #e6e9ef;
+$panel-border-strong: #d7dce4;
+$accent: #3b6fe0; // muted blue
+$accent-soft: rgba(59, 111, 224, 0.1);
+$accent-strong: #2a56c4;
+$teal: #12968c; // soft teal — secondary accent
+$teal-soft: rgba(18, 150, 140, 0.12);
+$success: #1f9d63;
+$success-soft: rgba(31, 157, 99, 0.12);
+$danger: #d6455b;
+$danger-soft: rgba(214, 69, 91, 0.12);
+$warning: #c8952a;
+$warning-soft: rgba(200, 149, 42, 0.14);
+
+// Reusable dark-on-light overlay tints, replacing the old white-on-dark
+// rgba(255,255,255, X) hairlines/hovers used throughout every component.
+$ink-04: rgba(15, 23, 42, 0.04);
+$ink-06: rgba(15, 23, 42, 0.06);
+$ink-08: rgba(15, 23, 42, 0.08);
+$ink-12: rgba(15, 23, 42, 0.12);
+$ink-18: rgba(15, 23, 42, 0.18);
+$overlay-scrim: rgba(15, 20, 30, 0.5);
+
+$shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+$shadow-md: 0 10px 24px -14px rgba(15, 23, 42, 0.16);
+$shadow-lg: 0 24px 48px -20px rgba(15, 23, 42, 0.2);
 
 // --- Typography ---
 $font-display: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -22,24 +50,23 @@ $axis-row-h: 30px;
 $panel-pad: 18px;
 $axis-gap: 6px;
 $lan-row-gap: 8px;
-$border-radius: 6px;
+$border-radius: 8px;
+$header-h: 68px;
 
-// --- Element category gradients ---
-// Maps a category key to a [from, to] color pair. Muted/dark tones (each
-// pair is one hue at two close, low lightness values, like a translucent
-// tint sitting over a near-black background) so white cell text keeps
-// strong contrast instead of washing out against a bright fill.
+// --- Element category gradients (pastel, light) ---
+// Maps a category key to a [from, to] color pair — a soft tint sitting over
+// a near-white background. Must stay in sync with data/categories.js.
 $gradients: (
-  "nonmetal":                (#1f4c61, #286480),
-  "halogen":                 (#215e54, #2c7d6f),
-  "diatomic-nonmetal":      (#1d4063, #265482),
-  "noble-gas":              (#3b255b, #4e3177),
-  "alkali-metal":           (#65221b, #852d23),
-  "alkaline-earth-metal":   (#674218, #885820),
-  "metalloid":              (#255b2e, #31773d),
-  "polyatomic-nonmetal":    (#25355b, #314677),
-  "post-transition-metal":  (#63551d, #827026),
-  "transition-metal":       (#5e2140, #7d2c54),
-  "lanthanide":             (#23585c, #2e747a),
-  "actinide":               (#255b44, #31775a),
+  "alkali-metal":           (#f4d2d4, #e9a5ab),
+  "alkaline-earth-metal":   (#f4e2d2, #e9c5a5),
+  "halogen":                (#f4edd2, #e9dba5),
+  "actinide":               (#daf4d2, #b6e9a5),
+  "nonmetal":               (#d2f4e0, #a5e9c1),
+  "diatomic-nonmetal":      (#d2f4e0, #a5e9c1),
+  "polyatomic-nonmetal":    (#d2f4e0, #a5e9c1),
+  "metalloid":              (#d2f4f1, #a5e9e3),
+  "lanthanide":             (#d2ecf4, #a5d8e9),
+  "transition-metal":       (#d2e0f4, #a5c1e9),
+  "post-transition-metal":  (#d7d2f4, #b0a5e9),
+  "noble-gas":              (#ecd2f4, #d8a5e9),
 );

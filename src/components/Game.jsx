@@ -1,8 +1,18 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
+import {
+  FiHelpCircle,
+  FiMapPin,
+  FiZap,
+  FiUsers,
+  FiClock,
+  FiGrid,
+  FiArrowLeft,
+} from "react-icons/fi";
 import PeriodicTable from "./PeriodicTable";
 import { ELEMENTS } from "../data/elements";
 import { PROPERTIES, propertyValue, formatSig } from "../data/propertyScale";
+import { titleCategory } from "../data/categories";
 import {
   correctFeedback,
   wrongFeedback,
@@ -11,17 +21,63 @@ import {
   questionTransition,
   timerBar,
   popScore,
+  entrance,
 } from "../animations/gameAnimations";
 
-const MODES = [
-  { key: "find", label: "Find the Element" },
-  { key: "symbol", label: "Find by Symbol" },
-  { key: "number", label: "Atomic Number" },
-  { key: "property", label: "Property Challenge" },
-  { key: "rush", label: "Element Rush" },
-];
-
 const RUSH_SECONDS = 45;
+const MEMORY_PAIRS = 6;
+const BEST_KEY_PREFIX = "pt-game-best-";
+
+const GAMES = [
+  {
+    key: "quiz",
+    label: "Element Quiz",
+    desc: "Test your knowledge of symbols.",
+    icon: FiHelpCircle,
+    difficulty: "Easy",
+    accent: "#3B6FE0",
+  },
+  {
+    key: "find",
+    label: "Find the Element",
+    desc: "Spot it on the periodic table.",
+    icon: FiMapPin,
+    difficulty: "Medium",
+    accent: "#12968C",
+  },
+  {
+    key: "property",
+    label: "Guess the Property",
+    desc: "Guess mass, density & more.",
+    icon: FiZap,
+    difficulty: "Hard",
+    accent: "#7A4FC4",
+  },
+  {
+    key: "group",
+    label: "Group Challenge",
+    desc: "Identify the right chemical group.",
+    icon: FiUsers,
+    difficulty: "Medium",
+    accent: "#2F9E62",
+  },
+  {
+    key: "rush",
+    label: "Speed Round",
+    desc: "Answer fast, score big.",
+    icon: FiClock,
+    difficulty: "Hard",
+    accent: "#C8952A",
+  },
+  {
+    key: "memory",
+    label: "Memory Match",
+    desc: "Match symbols with element names.",
+    icon: FiGrid,
+    difficulty: "Easy",
+    accent: "#C74E93",
+  },
+];
 
 function shuffle(arr) {
   const r = [...arr];
@@ -34,6 +90,22 @@ function shuffle(arr) {
 
 function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function readBest(key) {
+  try {
+    return Number(window.localStorage.getItem(BEST_KEY_PREFIX + key)) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeBest(key, value) {
+  try {
+    window.localStorage.setItem(BEST_KEY_PREFIX + key, String(value));
+  } catch {
+    /* ignore — best score is a nice-to-have, not required to function */
+  }
 }
 
 function makeOptions(correctEl, count = 4) {
@@ -90,12 +162,63 @@ function makeRushQuestion() {
   return { correct: el.number, correctEl: el, options: [] };
 }
 
+function makeGroupQuestion() {
+  const withCategory = ELEMENTS.filter((e) => e.category);
+  const el = pick(withCategory);
+  const allCategories = Array.from(new Set(withCategory.map((e) => e.category)));
+  const distractors = shuffle(allCategories.filter((c) => c !== el.category)).slice(0, 3);
+  const categoryOptions = shuffle([el.category, ...distractors]);
+  return {
+    correct: el.number,
+    correctEl: el,
+    correctCategory: el.category,
+    categoryOptions,
+    prompt: `Which chemical group does ${el.name} (${el.symbol}) belong to?`,
+  };
+}
+
+function makeMemoryDeck() {
+  const chosen = shuffle(ELEMENTS).slice(0, MEMORY_PAIRS);
+  const cards = [];
+  chosen.forEach((el) => {
+    cards.push({ id: `${el.number}-symbol`, number: el.number, type: "symbol", text: el.symbol });
+    cards.push({ id: `${el.number}-name`, number: el.number, type: "name", text: el.name });
+  });
+  return shuffle(cards);
+}
+
+// Short, factual "why" explanation shown after every answer — every game
+// mode gets one, built straight from the same dataset that powers the rest
+// of the app, never invented.
+function explainAnswer(mode, question) {
+  if (!question || !question.correctEl) return "";
+  const el = question.correctEl;
+  if (mode === "quiz" || mode === "find") {
+    return `${el.symbol} is the symbol for ${el.name} (atomic number ${el.number}), a ${el.category || "element"} in group ${
+      el.group ?? "—"
+    }, period ${el.period ?? "—"}.`;
+  }
+  if (mode === "property") {
+    if (question.cfg) {
+      const v = propertyValue(el, question.cfg.key);
+      const unit = question.cfg.unit ? ` ${question.cfg.unit}` : "";
+      return `${el.name} has the ${question.wantHighest ? "highest" : "lowest"} ${question.cfg.label.toLowerCase()} among the choices, at ${question.cfg.fmt(v)}${unit}.`;
+    }
+    if (question.showValues) {
+      return `${el.name} has an atomic mass of ${formatSig(el.atomicMass, 5)} u — the closest match.`;
+    }
+  }
+  if (mode === "group") {
+    return `${el.name} is classed as ${titleCategory(question.correctCategory)}${
+      el.group != null ? ` (Group ${el.group})` : ""
+    }.`;
+  }
+  return "";
+}
+
 export default function Game() {
-  // Nothing starts (no question generated, no score tracked) until the
-  // player explicitly confirms — landing on the tab shouldn't drop them
-  // straight into a running round.
-  const [started, setStarted] = useState(false);
-  const [mode, setMode] = useState("find");
+  const [activeGame, setActiveGame] = useState(null);
+  const [mode, setMode] = useState(null);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [best, setBest] = useState(0);
@@ -104,25 +227,26 @@ export default function Game() {
   const [selIdx, setSelIdx] = useState(-1);
   const [value, setValue] = useState("");
   const [timeLeft, setTimeLeft] = useState(RUSH_SECONDS);
+  const [memoryDeck, setMemoryDeck] = useState([]);
+  const [memoryFlipped, setMemoryFlipped] = useState([]);
+  const [memoryMatched, setMemoryMatched] = useState([]);
+  const [memoryMoves, setMemoryMoves] = useState(0);
+  const [memoryBusy, setMemoryBusy] = useState(false);
+  const [bestScores, setBestScores] = useState(() =>
+    Object.fromEntries(GAMES.map((g) => [g.key, readBest(g.key)]))
+  );
 
   const rootRef = useRef(null);
   const stageRef = useRef(null);
   const scoreRef = useRef(null);
   const tableRef = useRef(null);
   const optionRefs = useRef([]);
+  const memoryCardRefs = useRef({});
   const timerTLRef = useRef(null);
   const timeoutRef = useRef(null);
-// Skip the out/in transition for the very first question — on mount the game
-// view is already fading in, so a second fade would flash the freshly mounted
-// find-mode table. Run this pre-paint (useLayoutEffect) so the first frame is
-// never painted fully visible.
-const isFirstQuestionRef = useRef(true);
-// The periodic-table cell (or MCQ button) most recently lit up green by
-// revealCorrect() after a wrong answer. That glow has no self-clearing
-// animation (unlike correctFeedback's), and "Find the Element" reuses the
-// same table nodes across questions, so without this it stays lit forever —
-// stacking up green cells from every question you've gotten wrong so far.
-const revealedNodeRef = useRef(null);
+  const isFirstQuestionRef = useRef(true);
+  const revealedNodeRef = useRef(null);
+  const landingRef = useRef(null);
 
   const newQuestion = useCallback((m) => {
     if (revealedNodeRef.current) {
@@ -136,12 +260,11 @@ const revealedNodeRef = useRef(null);
       setQuestion(makeExtremumQuestion());
     } else if (m === "property") {
       setQuestion(makeClosestQuestion());
-    } else if (m === "symbol") {
+    } else if (m === "quiz") {
       const q = makeStandardQuestion();
       setQuestion({ ...q, prompt: "Which element is this?" });
-    } else if (m === "number") {
-      const q = makeStandardQuestion();
-      setQuestion({ ...q, prompt: `Which element is atomic number ${q.correct}?` });
+    } else if (m === "group") {
+      setQuestion(makeGroupQuestion());
     } else if (m === "rush") {
       setQuestion(makeRushQuestion());
       setTimeLeft(RUSH_SECONDS);
@@ -152,15 +275,35 @@ const revealedNodeRef = useRef(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // initial question on start / mode change
-  useEffect(() => {
-    if (!started) return;
-    newQuestion(mode);
-  }, [started, mode, newQuestion]);
+  const startGame = (key) => {
+    setActiveGame(key);
+    setMode(key);
+    setScore(0);
+    setStreak(0);
+    setBest(bestScores[key] || 0);
+    isFirstQuestionRef.current = true;
+    if (key === "memory") {
+      setMemoryDeck(makeMemoryDeck());
+      setMemoryFlipped([]);
+      setMemoryMatched([]);
+      setMemoryMoves(0);
+      setMemoryBusy(false);
+    } else {
+      newQuestion(key);
+    }
+  };
+
+  const backToGames = () => {
+    if (timerTLRef.current) timerTLRef.current.kill();
+    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+    setActiveGame(null);
+    setMode(null);
+    setQuestion(null);
+  };
 
   // question transitions + timers (useLayoutEffect = pre-paint, no flash)
   useLayoutEffect(() => {
-    if (!started || !question || !stageRef.current) return;
+    if (!mode || mode === "memory" || !question || !stageRef.current) return;
     if (isFirstQuestionRef.current) {
       isFirstQuestionRef.current = false;
       gsap.from(stageRef.current, {
@@ -188,8 +331,13 @@ const revealedNodeRef = useRef(null);
   }, [question]);
 
   useEffect(() => {
-    if (best < score) setBest(score);
-  }, [score, best]);
+    if (!mode) return;
+    if (best < score) {
+      setBest(score);
+      setBestScores((b) => ({ ...b, [mode]: score }));
+      writeBest(mode, score);
+    }
+  }, [score, best, mode]);
 
   useEffect(
     () => () => {
@@ -198,6 +346,14 @@ const revealedNodeRef = useRef(null);
     },
     []
   );
+
+  useLayoutEffect(() => {
+    if (activeGame) return;
+    const ctx = gsap.context(() => {
+      entrance(landingRef.current?.querySelectorAll(".game-card"));
+    }, landingRef);
+    return () => ctx.revert();
+  }, [activeGame]);
 
   const scoreUp = () => {
     setScore((s) => s + 10);
@@ -209,10 +365,16 @@ const revealedNodeRef = useRef(null);
     setFeedback("done");
   }, []);
 
-  const next = useCallback((m) => {
+  // Quiz / Property / Group / Find all pause on an answer — correct or
+  // wrong — and wait for the player to click "Next Question" rather than
+  // auto-advancing on a timer, so there's actually time to read the
+  // explanation instead of it disappearing mid-sentence. Speed Round is the
+  // one exception by design: continuous pace is the whole point of it, so it
+  // keeps its own timed auto-advance untouched.
+  const goNext = useCallback(() => {
     if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
-    timeoutRef.current = window.setTimeout(() => newQuestion(m), 700);
-  }, [newQuestion]);
+    newQuestion(mode);
+  }, [newQuestion, mode]);
 
   const answerMCQ = (el, idx) => {
     if (feedback === "correct" || feedback === "wrong" || !question) return;
@@ -224,7 +386,6 @@ const revealedNodeRef = useRef(null);
       setSelIdx(idx);
       scoreUp();
       correctFeedback([t], scoreRef.current);
-      next(mode);
     } else {
       setFeedback("wrong");
       setSelIdx(idx);
@@ -232,7 +393,27 @@ const revealedNodeRef = useRef(null);
       revealCorrect(correctOpt);
       revealedNodeRef.current = correctOpt;
       setStreak(0);
-      next(mode);
+    }
+  };
+
+  const answerGroup = (category, idx) => {
+    if (feedback === "correct" || feedback === "wrong" || !question) return;
+    const correct = category === question.correctCategory;
+    const t = optionRefs.current[idx];
+    const correctIdx = question.categoryOptions.findIndex((c) => c === question.correctCategory);
+    const correctOpt = optionRefs.current[correctIdx];
+    if (correct) {
+      setFeedback("correct");
+      setSelIdx(idx);
+      scoreUp();
+      correctFeedback([t], scoreRef.current);
+    } else {
+      setFeedback("wrong");
+      setSelIdx(idx);
+      wrongFeedback([t]);
+      revealCorrect(correctOpt);
+      revealedNodeRef.current = correctOpt;
+      setStreak(0);
     }
   };
 
@@ -243,7 +424,6 @@ const revealedNodeRef = useRef(null);
       setFeedback("correct");
       scoreUp();
       correctFeedback([node], scoreRef.current);
-      next(mode);
     } else {
       setFeedback("wrong");
       wrongFeedback([node]);
@@ -251,7 +431,6 @@ const revealedNodeRef = useRef(null);
       const right = tableRef.current ? tableRef.current.getNode(question.correct) : null;
       revealCorrect(right);
       revealedNodeRef.current = right;
-      next(mode);
     }
   };
 
@@ -278,66 +457,114 @@ const revealedNodeRef = useRef(null);
     }
   };
 
+  // --- Memory Match ---
+  const memoryCardNode = (id) => memoryCardRefs.current[id] || null;
+
+  const flipMemoryCard = (card) => {
+    if (memoryBusy || memoryMatched.includes(card.number) || memoryFlipped.some((f) => f.id === card.id)) {
+      return;
+    }
+    if (memoryFlipped.length === 0) {
+      setMemoryFlipped([card]);
+      return;
+    }
+    if (memoryFlipped.length === 1) {
+      const first = memoryFlipped[0];
+      const second = card;
+      setMemoryFlipped([first, second]);
+      setMemoryBusy(true);
+      setMemoryMoves((m) => m + 1);
+      const isMatch = first.number === second.number && first.type !== second.type;
+      window.setTimeout(() => {
+        if (isMatch) {
+          correctFeedback(
+            [memoryCardNode(first.id), memoryCardNode(second.id)].filter(Boolean),
+            scoreRef.current
+          );
+          setMemoryMatched((m) => [...m, first.number]);
+          setScore((s) => s + 10);
+        } else {
+          wrongFeedback([memoryCardNode(first.id), memoryCardNode(second.id)].filter(Boolean));
+        }
+        setMemoryFlipped([]);
+        setMemoryBusy(false);
+      }, 700);
+    }
+  };
+
+  const memoryDone = memoryMatched.length === MEMORY_PAIRS && MEMORY_PAIRS > 0;
+
+  useEffect(() => {
+    if (mode === "memory" && memoryDone) {
+      if (best < score) {
+        setBest(score);
+        setBestScores((b) => ({ ...b, memory: score }));
+        writeBest("memory", score);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memoryDone]);
+
   const optionFeedbackClass = (idx) => {
-    if (question && idx === question.options.findIndex((o) => o.number === question.correct)) {
-      if (feedback === "correct") return " is-correct";
-      if (feedback === "wrong") return " is-correct";
+    if (question && idx === question.options?.findIndex((o) => o.number === question.correct)) {
+      if (feedback === "correct" || feedback === "wrong") return " is-correct";
     }
     if (idx === selIdx && feedback === "wrong") return " is-wrong";
     return "";
   };
 
-  const optionValue = (el) => {
-    if (question && question.cfg) {
-      const v = propertyValue(el, question.cfg.key);
-      return v != null ? formatSig(v, 4) : "N/A";
+  const categoryOptionFeedbackClass = (idx) => {
+    if (question && question.categoryOptions?.[idx] === question.correctCategory) {
+      if (feedback === "correct" || feedback === "wrong") return " is-correct";
     }
-    if (question && question.showValues) return `${formatSig(el.atomicMass, 5)} u`;
-    return null;
+    if (idx === selIdx && feedback === "wrong") return " is-wrong";
+    return "";
   };
 
-  if (!started) {
+  // --- Landing: choose a game ---
+  if (!activeGame) {
     return (
-      <div className="game game--intro" ref={rootRef}>
-        <div className="game-intro">
-          <span className="game-intro__eyebrow">Element Quiz</span>
-          <h2 className="game-intro__title">Ready to test your knowledge?</h2>
-          <p className="game-intro__hint">Pick a mode, then jump in whenever you're ready.</p>
-          <div className="game__modes game-intro__modes">
-            {MODES.map((m) => (
-              <button
-                key={m.key}
-                type="button"
-                className={`game-mode-pill${mode === m.key ? " is-active" : ""}`}
-                onClick={() => setMode(m.key)}
-              >
-                {m.label}
-              </button>
-            ))}
-          </div>
-          <button type="button" className="game-intro__play" onClick={() => setStarted(true)}>
-            Play
-          </button>
+      <div className="game game--landing" ref={landingRef}>
+        <div className="game-landing__head">
+          <p className="game-landing__eyebrow">Games</p>
+          <h2 className="game-landing__title">Learn Chemistry by Playing</h2>
+          <p className="game-landing__subtitle">Test your knowledge of the elements.</p>
+        </div>
+
+        <div className="games-panel">
+        <div className="game-cards">
+          {GAMES.map((g) => {
+            const Icon = g.icon;
+            return (
+              <div className="game-card" key={g.key} style={{ "--game-accent": g.accent }}>
+                <span className="game-card__icon">
+                  <Icon aria-hidden="true" />
+                </span>
+                <h3 className="game-card__name">{g.label}</h3>
+                <p className="game-card__desc">{g.desc}</p>
+                <span className="game-card__difficulty">{g.difficulty}</span>
+                <span className="game-card__best">Best: {bestScores[g.key] || 0}</span>
+                <button type="button" className="game-card__play" onClick={() => startGame(g.key)}>
+                  Play Now
+                </button>
+              </div>
+            );
+          })}
+        </div>
         </div>
       </div>
     );
   }
 
+  const activeMeta = GAMES.find((g) => g.key === activeGame);
+
   return (
     <div className="game" ref={rootRef}>
       <div className="game__top">
-        <div className="game__modes">
-          {MODES.map((m) => (
-            <button
-              key={m.key}
-              type="button"
-              className={`game-mode-pill${mode === m.key ? " is-active" : ""}`}
-              onClick={() => setMode(m.key)}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
+        <button type="button" className="game-back" onClick={backToGames}>
+          <FiArrowLeft aria-hidden="true" /> All games
+        </button>
+        <div className="game__top-title">{activeMeta?.label}</div>
         <div className="game__stats">
           <div className="game-stat">
             <span className="game-stat__label">Score</span>
@@ -345,10 +572,12 @@ const revealedNodeRef = useRef(null);
               {score}
             </span>
           </div>
-          <div className="game-stat">
-            <span className="game-stat__label">Streak</span>
-            <span className="game-stat__value">{streak}</span>
-          </div>
+          {mode !== "memory" && (
+            <div className="game-stat">
+              <span className="game-stat__label">Streak</span>
+              <span className="game-stat__value">{streak}</span>
+            </div>
+          )}
           <div className="game-stat">
             <span className="game-stat__label">Best</span>
             <span className="game-stat__value">{best}</span>
@@ -358,53 +587,55 @@ const revealedNodeRef = useRef(null);
 
       <div className="game__stage" ref={stageRef}>
         {mode === "find" && question && (
-<div className="game-find">
-              <div className="game-prompt">
-                <span className="game-prompt__eyebrow">Find the Element</span>
-                <strong className="game-prompt__title">{question.correctEl.name}</strong>
-                <span className="game-prompt__hint">
-                  Click the matching card on the table · category:{" "}
-                  {question.correctEl.category}
-                </span>
-                {feedback === "correct" && (
-                  <span className="game-feedback game-feedback--ok">✓ Correct · +10</span>
-                )}
-                {feedback === "wrong" && (
-                  <span className="game-feedback game-feedback--no">✕ Incorrect</span>
-                )}
-              </div>
-              <div className="table-scroll">
-                <PeriodicTable
-                  ref={tableRef}
-                  mode="wide"
-                  hoverEnabled={false}
-                  onSelect={answerFind}
-                  className="game-table"
-                />
-              </div>
+          <div className="game-find">
+            <div className="game-prompt">
+              <span className="game-prompt__eyebrow">Find the Element</span>
+              <strong className="game-prompt__title">{question.correctEl.name}</strong>
+              <span className="game-prompt__hint">
+                Click the matching card on the table · category:{" "}
+                {question.correctEl.category}
+              </span>
+              {feedback === "correct" && (
+                <span className="game-feedback game-feedback--ok">✓ Correct · +10</span>
+              )}
+              {feedback === "wrong" && (
+                <span className="game-feedback game-feedback--no">✕ Incorrect</span>
+              )}
+              {(feedback === "correct" || feedback === "wrong") && (
+                <>
+                  <p className="game-explain">{explainAnswer("find", question)}</p>
+                  <button type="button" className="game-next-btn" onClick={goNext}>
+                    Next Question →
+                  </button>
+                </>
+              )}
             </div>
+            <div className="table-scroll">
+              <PeriodicTable
+                ref={tableRef}
+                mode="wide"
+                hoverEnabled={false}
+                onSelect={answerFind}
+                showNames={false}
+                className="game-table"
+              />
+            </div>
+          </div>
         )}
 
-        {(mode === "symbol" || mode === "number" || mode === "property") &&
-          question &&
-          question.options && (
-            <div className="game-mcq">
+        {(mode === "quiz" || mode === "property") && question && question.options && (
+          <div className="game-mcq">
             <div className="game-prompt">
               <span className="game-prompt__eyebrow">
-                {mode === "symbol"
-                  ? "Identify the Symbol"
-                  : mode === "number"
-                  ? "Atomic Number Challenge"
-                  : "Property Challenge"}
+                {mode === "quiz" ? "Identify the Element" : "Property Challenge"}
               </span>
-              {mode === "symbol" && (
+              {mode === "quiz" && (
                 <span className="game-prompt__symbol">{question.correctEl.symbol}</span>
               )}
               <strong className="game-prompt__title">{question.prompt}</strong>
             </div>
             <div className="game-options">
               {question.options.map((el, idx) => {
-                const val = optionValue(el);
                 return (
                   <button
                     key={el.number}
@@ -416,11 +647,51 @@ const revealedNodeRef = useRef(null);
                     onClick={() => answerMCQ(el, idx)}
                   >
                     <span className="game-option__name">{el.name}</span>
-                    {val != null && <span className="game-option__value">{val}</span>}
                   </button>
                 );
               })}
             </div>
+            {(feedback === "correct" || feedback === "wrong") && (
+              <>
+                <p className="game-explain">{explainAnswer("property", question)}</p>
+                <button type="button" className="game-next-btn" onClick={goNext}>
+                  Next Question →
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+        {mode === "group" && question && question.categoryOptions && (
+          <div className="game-mcq">
+            <div className="game-prompt">
+              <span className="game-prompt__eyebrow">Group Challenge</span>
+              <span className="game-prompt__symbol">{question.correctEl.symbol}</span>
+              <strong className="game-prompt__title">{question.prompt}</strong>
+            </div>
+            <div className="game-options">
+              {question.categoryOptions.map((cat, idx) => (
+                <button
+                  key={cat}
+                  type="button"
+                  className={`game-option${categoryOptionFeedbackClass(idx)}`}
+                  ref={(r) => {
+                    optionRefs.current[idx] = r;
+                  }}
+                  onClick={() => answerGroup(cat, idx)}
+                >
+                  <span className="game-option__name">{titleCategory(cat)}</span>
+                </button>
+              ))}
+            </div>
+            {(feedback === "correct" || feedback === "wrong") && (
+              <>
+                <p className="game-explain">{explainAnswer("group", question)}</p>
+                <button type="button" className="game-next-btn" onClick={goNext}>
+                  Next Question →
+                </button>
+              </>
+            )}
           </div>
         )}
 
@@ -463,6 +734,67 @@ const revealedNodeRef = useRef(null);
               <p className="game-feedback game-feedback--time">⏱ Time up! Final score {score}</p>
             )}
           </form>
+        )}
+
+        {mode === "memory" && (
+          <div className="game-memory">
+            <div className="game-prompt">
+              <span className="game-prompt__eyebrow">Memory Match</span>
+              <strong className="game-prompt__title">
+                Match each symbol with its element name
+              </strong>
+              <span className="game-prompt__hint">Moves: {memoryMoves}</span>
+            </div>
+
+            {memoryDone ? (
+              <div className="game-memory__done">
+                <p className="game-feedback game-feedback--ok">
+                  ✓ All matched in {memoryMoves} moves · +{memoryMatched.length * 10} points
+                </p>
+                <button
+                  type="button"
+                  className="game-card__play"
+                  onClick={() => {
+                    setMemoryDeck(makeMemoryDeck());
+                    setMemoryFlipped([]);
+                    setMemoryMatched([]);
+                    setMemoryMoves(0);
+                    setScore(0);
+                    setStreak(0);
+                  }}
+                >
+                  Play Again
+                </button>
+              </div>
+            ) : (
+              <div className="game-memory__grid">
+                {memoryDeck.map((card) => {
+                  const isFlipped =
+                    memoryFlipped.some((f) => f.id === card.id) || memoryMatched.includes(card.number);
+                  const isMatched = memoryMatched.includes(card.number);
+                  return (
+                    <button
+                      key={card.id}
+                      type="button"
+                      className={`game-memory-card${isFlipped ? " is-flipped" : ""}${
+                        isMatched ? " is-matched" : ""
+                      }`}
+                      ref={(r) => {
+                        memoryCardRefs.current[card.id] = r;
+                      }}
+                      onClick={() => flipMemoryCard(card)}
+                      disabled={isMatched}
+                    >
+                      <span className="game-memory-card__face game-memory-card__face--back">?</span>
+                      <span className="game-memory-card__face game-memory-card__face--front">
+                        {card.text}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

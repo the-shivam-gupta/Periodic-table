@@ -23,7 +23,13 @@ function toRgbTuple(color) {
 
 function hoverShadow(glowColor) {
   const [r, g, b] = toRgbTuple(glowColor);
-  return `0 14px 30px -10px rgba(0,0,0,0.6), 0 0 0 1px rgba(${r}, ${g}, ${b}, 0.55), 0 0 20px rgba(${r}, ${g}, ${b}, 0.45)`;
+  // Three layers, each doing one job:
+  //  - a soft, barely-offset lift shadow (the old 14px/30px/0.6 version cast
+  //    a heavy directional shadow toward the bottom-right, so the glow read
+  //    as lopsided instead of an even halo around the tile)
+  //  - a crisp, same-width-on-every-side ring in the glow color
+  //  - a wide, soft outer halo so the ring doesn't look like a hard outline
+  return `0 6px 16px -8px rgba(15, 23, 42, 0.35), 0 0 0 1.5px rgba(${r}, ${g}, ${b}, 0.55), 0 0 18px 2px rgba(${r}, ${g}, ${b}, 0.3)`;
 }
 
 export function hoverEnter({ card, number, symbol, name, badge, glowColor }) {

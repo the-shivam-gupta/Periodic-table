@@ -1,0 +1,228 @@
+@use "../utils/_variables" as *;
+@use "../utils/mixins" as *;
+
+// --- Sticky site header ---
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 70;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid $panel-border;
+}
+
+.site-header__inner {
+  max-width: 1760px;
+  margin: 0 auto;
+  height: $header-h;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.site-header__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: $text-primary;
+  flex: none;
+}
+
+.site-header__brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, $accent, $teal);
+  color: #fff;
+  font-family: $font-display;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.site-header__brand-text {
+  font-family: $font-display;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+
+  span {
+    color: $accent;
+  }
+}
+
+// --- Center compact nav ---
+.site-header__nav {
+  position: relative;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.site-header__link {
+  position: relative;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: $text-muted;
+  font-family: $font-body;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 999px;
+  white-space: nowrap;
+  transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    color: $text-primary;
+    transform: translateY(-1px);
+  }
+
+  &.is-active {
+    color: $accent;
+
+    &:hover {
+      transform: none;
+    }
+  }
+}
+
+// One shared underline that slides/resizes into place under the active link
+// (animated from Header.jsx via GSAP) instead of each link popping its own
+// underline in and out abruptly.
+.site-header__nav-indicator {
+  position: absolute;
+  left: 0;
+  bottom: 2px;
+  width: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: $accent;
+  pointer-events: none;
+  will-change: transform, width;
+}
+
+// --- Right-side actions ---
+.site-header__actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.site-header__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: $text-muted;
+  font-size: 17px;
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease,
+    transform 0.2s ease;
+
+  &:hover {
+    color: $text-primary;
+    background: $ink-04;
+    transform: translateY(-1px);
+  }
+
+  &.is-open {
+    color: $accent;
+    background: $accent-soft;
+    border-color: rgba($accent, 0.3);
+  }
+}
+
+.site-header__menu-btn {
+  display: none;
+}
+
+// --- Mobile drawer ---
+.site-header__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 65;
+  background: $overlay-scrim;
+}
+
+.site-header__drawer {
+  position: fixed;
+  top: $header-h;
+  left: 0;
+  right: 0;
+  z-index: 71;
+  background: $card-bg;
+  border-bottom: 1px solid $panel-border;
+  box-shadow: $shadow-lg;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.site-header__drawer-link {
+  width: 100%;
+  text-align: left;
+  padding: 13px 14px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: $text-primary;
+  font-family: $font-body;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: $ink-04;
+  }
+
+  &.is-active {
+    color: $accent;
+    background: $accent-soft;
+  }
+}
+
+@include media('tablet') {
+  .site-header__brand-text {
+    display: none;
+  }
+}
+
+// Six nav items need more room than the old three did — fold into the
+// drawer a bit earlier (tablet) rather than letting them wrap or crowd.
+@include media('tablet') {
+  .site-header__nav {
+    display: none;
+  }
+
+  .site-header__menu-btn {
+    display: inline-flex;
+  }
+
+  .site-header__help {
+    display: none;
+  }
+
+  // .site-header__nav (flex: 1) is what pushes .site-header__actions to the
+  // right edge normally — hidden above, that spacer is gone, so the menu
+  // button would otherwise sit right next to the brand instead of at the
+  // far right.
+  .site-header__actions {
+    margin-left: auto;
+  }
+}

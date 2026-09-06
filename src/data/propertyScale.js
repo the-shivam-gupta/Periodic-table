@@ -4,6 +4,24 @@
 // surfaced as a blank (or a configured placeholder like "Ancient") — never
 // invented.
 import React from "react";
+import { rgbToHsl, hslToRgb } from "./categories";
+
+// Turns a single computed heat color (e.g. from buildScale(...).color(v)) into
+// a two-stop [from, to] gradient pair in the same hue — a lighter and a
+// darker shade — the same way each category's own gradient is authored
+// (data/categories.js's CATEGORY_COLORS), instead of the same color at two
+// opacities. A gradient between two *different* opacities of one flat color
+// barely shows once painted over the page's own background, which is why
+// "Color by" cells used to look flatter/less glassy than category cells;
+// two distinct lightness stops of the same hue reproduces that same sheen.
+export function heatGradientStops(rgbString) {
+  const m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(rgbString || "");
+  if (!m) return [rgbString, rgbString];
+  const [h, s, l] = rgbToHsl(Number(m[1]), Number(m[2]), Number(m[3]));
+  const from = hslToRgb(h, s, Math.min(96, l + 5));
+  const to = hslToRgb(h, Math.min(100, s + 4), Math.max(55, l - 11));
+  return [`rgb(${from.join(", ")})`, `rgb(${to.join(", ")})`];
+}
 
 // Electron configuration strings like "[Ne] 3s2 3p5" get their orbital
 // occupancies set as superscripts: [Ne] 3s<sup>2</sup> 3p<sup>5</sup>.
@@ -163,26 +181,25 @@ export function isMissingValueFor(kind, value) {
 }
 
 // Fixed palette used to assign one color per distinct categorical value.
-// Muted/dark tones (same family as the category colors) so white cell text
-// stays at a strong contrast ratio instead of washing out against a bright
-// fill.
+// Light, pastel tones (same family as the category colors) so dark navy cell
+// text stays calm and readable instead of the harsh white-on-saturated look.
 export const CATEGORICAL_PALETTE = [
-  "#642b26",
-  "#764c28",
-  "#695d20",
-  "#63732b",
-  "#3f6723",
-  "#287925",
-  "#26643b",
-  "#287660",
-  "#206369",
-  "#2b5173",
-  "#232e67",
-  "#372579",
-  "#4a2664",
-  "#732876",
-  "#692051",
-  "#732b40",
+  "#FBD7D7",
+  "#FBE3D3",
+  "#FBEFCB",
+  "#F5F5C7",
+  "#E3F0C7",
+  "#D3ECD1",
+  "#C7EAD9",
+  "#C7EAE9",
+  "#C7E1EE",
+  "#CBD7F0",
+  "#D6CFF0",
+  "#E3CDF0",
+  "#F0CDEB",
+  "#F0CDDA",
+  "#EAD2C9",
+  "#E3E7EE",
 ];
 
 function hashValue(value) {
@@ -195,15 +212,15 @@ function hashValue(value) {
 }
 
 // --- Color scale ---
-// Scientific heat gradient tuned to the dark theme: low = indigo/blue →
-// mid = cyan/teal → high = amber → very high = red. Muted/dark values (like
-// a translucent tint over near-black) so white cell text keeps a strong
-// contrast ratio instead of washing out against a bright fill.
+// Scientific heat gradient tuned to the light theme: low = soft blue →
+// mid = soft teal → high = soft amber → very high = soft coral. Pastel
+// values so dark navy cell text keeps a calm, readable contrast instead of
+// requiring a white-on-color treatment.
 export const STOPS = [
-  [0.0, [40, 51, 113]],
-  [0.38, [37, 106, 101]],
-  [0.72, [126, 97, 37]],
-  [1.0, [126, 37, 41]],
+  [0.0, [186, 214, 250]],
+  [0.35, [163, 230, 214]],
+  [0.68, [250, 224, 152]],
+  [1.0, [246, 173, 165]],
 ];
 
 export function stopsGradient(direction = 90) {

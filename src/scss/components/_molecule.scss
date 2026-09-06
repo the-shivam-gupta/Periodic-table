@@ -5,7 +5,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 210px;
+  // width: 210px;
 }
 
 .molecule__svg {
@@ -15,7 +15,7 @@
 }
 
 .mol-bond__line {
-  stroke: rgba(255, 255, 255, 0.55);
+  stroke: $panel-border-strong;
   stroke-width: 2.2;
   stroke-linecap: round;
   opacity: 0;
@@ -26,12 +26,12 @@
 }
 
 .mol-atom__ball {
-  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45));
+  filter: drop-shadow(0 3px 6px rgba(15, 23, 42, 0.14));
 }
 
 .mol-symbol {
-  fill: #ffffff;
-  stroke: #0b101a;
+  fill: $text-primary;
+  stroke: #ffffff;
   stroke-width: 3px;
   paint-order: stroke;
   font-family: $font-mono;
@@ -50,7 +50,7 @@
     font-family: $font-body;
     font-size: 16px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.85);
+    color: $text-primary;
   }
 
   .molecule__formula {
@@ -61,7 +61,7 @@
 }
 
 .molecule--mini {
-  width: 150px;
+  // width: 150px;
 
   .mol-symbol {
     font-size: 11px;
@@ -71,4 +71,236 @@
   .molecule__name {
     font-size: 14px;
   }
+}
+
+// --- Molecules gallery view ---
+.molecules-view {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.molecules-view__head {
+  text-align: center;
+  max-width: 620px;
+  margin: 0 auto 32px;
+}
+
+.molecules-view__eyebrow {
+  font-family: $font-mono;
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: $accent-strong;
+  margin-bottom: 8px;
+}
+
+.molecules-view__title {
+  font-family: $font-display;
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  color: $text-primary;
+  margin-bottom: 8px;
+}
+
+.molecules-view__subtitle {
+  font-size: 15px;
+  line-height: 1.6;
+  color: $text-muted;
+}
+
+// A flex-wrap + justify-content:center row of intrinsically-sized cards left
+// the last (partial) row centered with its own left/right gaps instead of
+// meeting the toolbar's edges above it — a real grid, whose columns stretch
+// to fill the full row, keeps every row's edges flush with the toolbar's,
+// the same way .list-scroll's table lines up under .list-toolbar.
+.molecules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 18px;
+}
+
+.molecule-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid $panel-border;
+  background: $card-bg;
+  box-shadow: $shadow-sm;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-md;
+  }
+}
+
+.molecule-card__tagline {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+  color: $text-muted;
+  max-width: 190px;
+}
+
+// --- Molecules gallery toolbar: search + category filter --------------------
+// The search bar reuses the Elements list view's ".list-toolbar" treatment
+// (a bordered strip with a "Filter" label and a seamless, borderless input)
+// verbatim — see _list.scss's .list-toolbar/.list-toolbar__label/.list-search
+// — rather than a second, differently-styled search box design.
+.molecules-toolbar {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  border: 1px solid $panel-border;
+  border-radius: 12px;
+  background: $card-bg;
+  box-shadow: $shadow-sm;
+}
+
+.molecules-toolbar__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  padding: 0 16px;
+  font-family: $font-mono;
+  font-size: 12px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: $text-faint;
+  white-space: nowrap;
+
+  svg {
+    font-size: 14px;
+  }
+}
+
+.molecules-search {
+  position: relative;
+  flex: 1 1 220px;
+  min-width: 180px;
+}
+
+.molecules-search__input {
+  width: 100%;
+  height: 100%;
+  padding: 13px 16px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: $text-primary;
+  font-size: 15px;
+  font-family: $font-body;
+  outline: none;
+
+  &::placeholder {
+    color: $text-faint;
+  }
+
+  &:focus {
+    background: $ink-04;
+  }
+}
+
+// Sits inside .molecules-toolbar, beside the search box — the border-left
+// is its divider, the same way .list-cat-select divides itself from
+// .list-search in the Elements toolbar.
+.molecules-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: none;
+  padding: 8px 12px;
+  border-left: 1px solid $panel-border;
+}
+
+.molecules-filter-chip {
+  flex: none;
+  padding: 6px 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: $text-muted;
+  font-family: $font-body;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    color: $text-primary;
+    background: $ink-04;
+  }
+
+  &.is-active {
+    background: $accent-soft;
+    border-color: rgba($accent, 0.4);
+    color: $accent-strong;
+  }
+}
+
+.molecules-count {
+  font-family: $font-mono;
+  font-size: 12px;
+  color: $text-faint;
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.molecules-empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: $text-faint;
+  font-size: 14.5px;
+}
+
+.molecules-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 28px;
+}
+
+.molecules-page-btn,
+.molecules-page-num {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: $text-muted;
+  font-family: $font-mono;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: $ink-06;
+    color: $text-primary;
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+.molecules-page-num.is-active {
+  background: $accent-soft;
+  border-color: rgba($accent, 0.4);
+  color: $accent-strong;
 }

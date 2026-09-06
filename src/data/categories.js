@@ -1,40 +1,101 @@
-// Muted/dark tones — each pair is one hue at two close, low-lightness
-// values, like a translucent tint sitting over a near-black background
-// (e.g. linear-gradient(110deg, rgba(0,128,255,.4), rgba(0,128,255,.5)) —
-// composited onto a near-black page). Keeps white cell text at a strong
-// contrast ratio instead of washing out against a bright fill.
+// Light, pastel tones — each pair is one hue at two close, high-lightness
+// values (a soft tint sitting over a near-white background), so dark navy
+// cell text stays at a strong, calm contrast ratio instead of the harsh
+// white-on-saturated-color look of a dashboard/game UI.
 export const CATEGORY_COLORS = {
-  nonmetal: ["#1f4c61", "#286480"],
-  halogen: ["#215e54", "#2c7d6f"],
-  "diatomic nonmetal": ["#1d4063", "#265482"],
-  "polyatomic nonmetal": ["#25355b", "#314677"],
-  "noble gas": ["#3b255b", "#4e3177"],
-  "alkali metal": ["#65221b", "#852d23"],
-  "alkaline earth metal": ["#674218", "#885820"],
-  metalloid: ["#255b2e", "#31773d"],
-  "post-transition metal": ["#63551d", "#827026"],
-  "transition metal": ["#5e2140", "#7d2c54"],
-  lanthanide: ["#23585c", "#2e747a"],
-  actinide: ["#255b44", "#31775a"],
+  "alkali metal": ["#F4D2D4", "#E9A5AB"],
+  "alkaline earth metal": ["#F4E2D2", "#E9C5A5"],
+  halogen: ["#F4EDD2", "#E9DBA5"],
+  actinide: ["#DAF4D2", "#B6E9A5"],
+  nonmetal: ["#D2F4E0", "#A5E9C1"],
+  "diatomic nonmetal": ["#D2F4E0", "#A5E9C1"],
+  "polyatomic nonmetal": ["#D2F4E0", "#A5E9C1"],
+  metalloid: ["#D2F4F1", "#A5E9E3"],
+  lanthanide: ["#D2ECF4", "#A5D8E9"],
+  "transition metal": ["#D2E0F4", "#A5C1E9"],
+  "post-transition metal": ["#D7D2F4", "#B0A5E9"],
+  "noble gas": ["#ECD2F4", "#D8A5E9"],
 };
 
-export const DEFAULT_COLOR = ["#3c4553", "#4d596a"];
+export const DEFAULT_COLOR = ["#E7EAEF", "#D7DCE4"];
+
+// A single, more saturated "ink" per category — used only where a pastel
+// fill would be too pale to read (hover glow rings, active filter borders),
+// never as a background of its own.
+export const CATEGORY_ACCENT = {
+  "alkali metal": "#B9313D",
+  "alkaline earth metal": "#B97131",
+  halogen: "#B99E31",
+  actinide: "#53B931",
+  nonmetal: "#31B96A",
+  "diatomic nonmetal": "#31B96A",
+  "polyatomic nonmetal": "#31B96A",
+  metalloid: "#31B9AE",
+  lanthanide: "#3197B9",
+  "transition metal": "#316AB9",
+  "post-transition metal": "#4831B9",
+  "noble gas": "#9731B9",
+};
+
+export const DEFAULT_ACCENT = "#6B7686";
+
+// A dark, saturated version of each category's hue — used as the TEXT color
+// on top of the pastel fill (number/symbol/name/mass), so every category
+// reads as its own consistent color family instead of one flat black/navy
+// for every cell regardless of category.
+export const CATEGORY_TEXT = {
+  "alkali metal": "#711E25",
+  "alkaline earth metal": "#71451E",
+  halogen: "#71601E",
+  actinide: "#33711E",
+  nonmetal: "#1E7140",
+  "diatomic nonmetal": "#1E7140",
+  "polyatomic nonmetal": "#1E7140",
+  metalloid: "#1E716A",
+  lanthanide: "#1E5C71",
+  "transition metal": "#1E4071",
+  "post-transition metal": "#2C1E71",
+  "noble gas": "#5C1E71",
+};
+
+export const DEFAULT_TEXT = "#1B2430";
+
+export function categoryText(category) {
+  return CATEGORY_TEXT[category] || DEFAULT_TEXT;
+}
 
 export const FILTER_COLORS = {
-  "alkali-metal": ["#65221b", "#852d23"],
-  "alkaline-earth-metal": ["#674218", "#885820"],
-  "transition-metal": ["#5e2140", "#7d2c54"],
-  "post-transition-metal": ["#63551d", "#827026"],
-  metalloid: ["#255b2e", "#31773d"],
-  halogen: ["#215e54", "#2c7d6f"],
-  "noble-gas": ["#3b255b", "#4e3177"],
-  nonmetal: ["#1f4c61", "#286480"],
-  lanthanide: ["#23585c", "#2e747a"],
-  actinide: ["#255b44", "#31775a"],
+  "alkali-metal": ["#F4D2D4", "#E9A5AB"],
+  "alkaline-earth-metal": ["#F4E2D2", "#E9C5A5"],
+  "transition-metal": ["#D2E0F4", "#A5C1E9"],
+  "post-transition-metal": ["#D7D2F4", "#B0A5E9"],
+  metalloid: ["#D2F4F1", "#A5E9E3"],
+  halogen: ["#F4EDD2", "#E9DBA5"],
+  "noble-gas": ["#ECD2F4", "#D8A5E9"],
+  nonmetal: ["#D2F4E0", "#A5E9C1"],
+  lanthanide: ["#D2ECF4", "#A5D8E9"],
+  actinide: ["#DAF4D2", "#B6E9A5"],
+};
+
+export const FILTER_ACCENT = {
+  "alkali-metal": "#B9313D",
+  "alkaline-earth-metal": "#B97131",
+  "transition-metal": "#316AB9",
+  "post-transition-metal": "#4831B9",
+  metalloid: "#31B9AE",
+  halogen: "#B99E31",
+  "noble-gas": "#9731B9",
+  nonmetal: "#31B96A",
+  lanthanide: "#3197B9",
+  actinide: "#53B931",
 };
 
 export function categoryColors(category) {
   return CATEGORY_COLORS[category] || DEFAULT_COLOR;
+}
+
+export function categoryAccent(category) {
+  return CATEGORY_ACCENT[category] || DEFAULT_ACCENT;
 }
 
 function hashStr(value) {
@@ -53,7 +114,7 @@ function hexToRgb(hex) {
   return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
 }
 
-function rgbToHsl(r, g, b) {
+export function rgbToHsl(r, g, b) {
   r /= 255;
   g /= 255;
   b /= 255;
@@ -86,7 +147,7 @@ function hueToRgb(p, q, t) {
   return p;
 }
 
-function hslToRgb(h, s, l) {
+export function hslToRgb(h, s, l) {
   const hh = ((h % 360) + 360) % 360 / 360;
   const ss = s / 100;
   const ll = l / 100;
@@ -103,12 +164,27 @@ function hslToRgb(h, s, l) {
   ];
 }
 
+// Turns an already-computed "rgb(r, g, b)" color — e.g. a point along a
+// "Color by" property's heat gradient — into a dark, saturated text color in
+// the same hue family, the same way categoryText() does for category fills.
+// Used so cell text stays colorful (matching whatever the cell is actually
+// showing) instead of falling back to flat black once a property gradient
+// replaces the category color.
+export function darkenRgbForText(rgbString) {
+  const m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(rgbString || "");
+  if (!m) return null;
+  const [h] = rgbToHsl(Number(m[1]), Number(m[2]), Number(m[3]));
+  const [r, g, b] = hslToRgb(h, 58, 28);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
 // Shades an element's own category color by its exact property value, so
 // elements that share a category — and would otherwise share one flat color —
 // are still told apart in a per-value "Color by" view, without introducing an
 // unrelated rainbow of colors. `salt` (typically the property key, e.g.
 // "oxidationStates") keeps two different properties from landing the same
-// element on the same shade.
+// element on the same shade. Clamped to stay light/pastel (never drifts dark)
+// so it always reads as a calm, textbook-like tint with dark cell text.
 export function categoryShade(category, value, salt) {
   const [fromHex] = categoryColors(category);
   const [r, g, b] = hexToRgb(fromHex);
@@ -117,8 +193,8 @@ export function categoryShade(category, value, salt) {
   const hueShift = (hash % 57) - 28; // -28..+28 degrees — stays in the family
   const lightShift = (Math.floor(hash / 57) % 21) - 10; // -10..+10 points
   const newH = h + hueShift;
-  const newS = Math.max(45, s);
-  const newL = Math.max(22, Math.min(76, l + lightShift));
+  const newS = Math.max(40, s);
+  const newL = Math.max(58, Math.min(94, l + lightShift));
   const [nr, ng, nb] = hslToRgb(newH, newS, newL);
   return `rgb(${nr}, ${ng}, ${nb})`;
 }

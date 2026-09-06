@@ -118,5 +118,12 @@ export function entrance(items) {
     duration: 0.45,
     stagger: 0.06,
     ease: "power3.out",
+    // Later-staggered items (a grid's bottom row, mainly) measured as
+    // finishing a few pixels short of y:0 rather than fully settling —
+    // visible as uneven spacing under whichever row was still offset.
+    // clearProps strips the inline transform/opacity once each item's own
+    // tween completes, snapping it back to its plain CSS resting position
+    // instead of trusting the tweened value to have landed exactly on 0.
+    clearProps: "transform,opacity",
   });
 }

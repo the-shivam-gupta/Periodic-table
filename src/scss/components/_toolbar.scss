@@ -1,19 +1,18 @@
 @use "../utils/_variables" as *;
 @use "../utils/mixins" as *;
 
-// --- Table control bar (Filter / Color by / More) ---
+// --- Table control bar (Filter / Color by / Legend / More) ---
+// Sits as a flex item inside .page-toolbar, alongside the view switch — no
+// longer a standalone full-width centered row of its own.
 .table-controlbar {
-  width: 100%;
-  max-width: 1040px;
-  margin: 0 auto 14px;
   display: flex;
-  justify-content: center;
   align-items: flex-start;
 }
 
 .toolbar {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -27,41 +26,47 @@
   gap: 8px;
   padding: 10px 16px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid $panel-border-strong;
+  background: $card-bg;
+  color: $text-muted;
   font-size: var(--text-sm, 14px);
   font-family: $font-body;
   font-weight: 500;
   line-height: 1.1;
   cursor: pointer;
   white-space: nowrap;
+  box-shadow: $shadow-sm;
   transition: transform 0.2s ease, color 0.2s ease, background-color 0.2s ease,
     border-color 0.2s ease, box-shadow 0.2s ease;
 
   strong {
     font-weight: 600;
+    color: $text-primary;
   }
 
   &:hover {
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.28);
-    background: rgba(255, 255, 255, 0.08);
+    color: $text-primary;
+    border-color: $panel-border-strong;
+    background: $ink-04;
     transform: translateY(-1px);
   }
 
   &.is-open {
-    background: rgba($accent, 0.14);
-    border-color: rgba($accent, 0.55);
-    color: #fff;
-    box-shadow: 0 0 0 3px rgba($accent, 0.15);
+    background: $accent-soft;
+    border-color: rgba($accent, 0.4);
+    color: $accent-strong;
+    box-shadow: 0 0 0 3px rgba($accent, 0.12);
+
+    strong {
+      color: $accent-strong;
+    }
   }
 }
 
 .toolbar-btn__icon {
   font-size: 15px;
   flex: none;
-  opacity: 0.85;
+  opacity: 0.8;
 }
 
 .toolbar-btn__label {
@@ -90,11 +95,10 @@
   flex-direction: column;
   max-height: min(480px, calc(100vh - 24px));
   overflow: hidden;
-  background: rgba(14, 19, 30, 0.94);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: $card-bg;
+  border: 1px solid $panel-border;
   border-radius: 14px;
-  backdrop-filter: blur(16px);
-  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.8);
+  box-shadow: $shadow-lg;
   will-change: transform, opacity;
 }
 
@@ -124,8 +128,8 @@
   justify-content: flex-end;
   gap: 8px;
   padding: 10px 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.09);
-  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid $panel-border;
+  background: $page-bg;
 }
 
 // --- Popover search ---
@@ -136,12 +140,12 @@
   margin: 2px 12px 6px;
   padding: 9px 12px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid $panel-border;
+  background: $page-bg;
 
   &:focus-within {
-    border-color: rgba($accent, 0.55);
-    box-shadow: 0 0 0 3px rgba($accent, 0.14);
+    border-color: rgba($accent, 0.5);
+    box-shadow: 0 0 0 3px $accent-soft;
   }
 }
 
@@ -177,7 +181,7 @@
   font-size: 14px;
 
   &:hover {
-    color: #fff;
+    color: $text-primary;
   }
 }
 
@@ -209,14 +213,14 @@
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.06);
-    color: #fff;
+    background: $ink-04;
+    color: $text-primary;
   }
 
   &.is-active {
-    background: rgba($accent, 0.13);
-    border-color: rgba($accent, 0.35);
-    color: #fff;
+    background: $accent-soft;
+    border-color: rgba($accent, 0.3);
+    color: $accent-strong;
     font-weight: 600;
   }
 }
@@ -235,14 +239,14 @@
   font-family: $font-mono;
   font-size: 11px;
   color: $text-faint;
-  background: rgba(255, 255, 255, 0.07);
+  background: $ink-06;
   border-radius: 999px;
   padding: 2px 8px;
   min-width: 24px;
   text-align: center;
 
   .td-item.is-active & {
-    color: rgba(255, 255, 255, 0.9);
+    color: $accent-strong;
   }
 }
 
@@ -263,8 +267,8 @@
   width: 34px;
   height: 8px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgb(40, 51, 113), rgb(37, 106, 101), rgb(126, 37, 41));
-  opacity: 0.85;
+  background: linear-gradient(90deg, rgb(186, 214, 250), rgb(163, 230, 214), rgb(246, 173, 165));
+  opacity: 0.9;
 }
 
 .td-swatch {
@@ -272,20 +276,20 @@
   width: 14px;
   height: 14px;
   border-radius: 5px;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.14);
 
   &--all {
     background: conic-gradient(
       from 0deg,
-      #ff6347,
-      #ffa500,
-      #ffd700,
-      #32cd32,
-      #00bfff,
-      #87cefa,
-      #9370db,
-      #00ced1,
-      #ff6347
+      #f6c4c6,
+      #f8d3ae,
+      #f5e2a2,
+      #c7e9d3,
+      #c0e2ea,
+      #c3e4ec,
+      #d8c7ef,
+      #efc7df,
+      #f6c4c6
     );
   }
 }
@@ -298,8 +302,8 @@
   width: 18px;
   height: 18px;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #0b101a;
+  border: 1px solid $panel-border-strong;
+  color: #fff;
   background: transparent;
   font-size: 12px;
   transition: background-color 0.15s ease, border-color 0.15s ease;
@@ -320,7 +324,7 @@
 .td-foot-btn {
   padding: 6px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid $panel-border-strong;
   background: transparent;
   color: $text-muted;
   font-size: 13px;
@@ -330,21 +334,10 @@
   transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
 
   &:hover {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.3);
+    color: $text-primary;
+    background: $ink-04;
+    border-color: $panel-border-strong;
   }
-}
-
-// --- Status caption ---
-.table-caption {
-  text-align: center;
-  margin: 0 auto 14px;
-  min-height: 18px;
-  font-size: 13px;
-  line-height: 1.5;
-  color: $text-faint;
-  font-family: $font-mono;
 }
 
 // --- Responsive ---

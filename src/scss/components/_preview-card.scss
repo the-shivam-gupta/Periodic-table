@@ -22,19 +22,19 @@
   height: 220px;
   padding: 14px;
   border-radius: 16px;
-  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  border: 1.5px solid color-mix(in srgb, var(--el-text, #{$panel-border}) 28%, transparent);
   color: $text-primary;
   background-color: $card-bg;
 
-  // A soft colored halo (in the element's own category color) plus a bright
+  // A soft colored halo (in the element's own category color) plus a crisp
   // rim light is what actually separates this from a plain scaled-down copy
   // of the center tile / grid cell — it reads as a floating popup, not
   // another table cell.
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.3),
-    0 22px 46px -18px rgba(0, 0, 0, 0.8),
-    0 0 0 5px color-mix(in srgb, var(--preview-glow) 22%, transparent),
-    0 0 34px 2px color-mix(in srgb, var(--preview-glow) 55%, transparent);
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    0 22px 40px -18px rgba(15, 23, 42, 0.22),
+    0 0 0 5px color-mix(in srgb, var(--preview-glow) 16%, transparent),
+    0 0 26px 2px color-mix(in srgb, var(--preview-glow) 30%, transparent);
   animation: preview-pop 0.28s ease;
 
   // Element has no value for the active "Color by" property — match the
@@ -42,18 +42,23 @@
   // color.
   &.is-missing {
     background: $card-bg;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12),
-      0 24px 50px -20px rgba(0, 0, 0, 0.75);
+    box-shadow: inset 0 0 0 1px $panel-border-strong,
+      0 22px 40px -20px rgba(15, 23, 42, 0.2);
     opacity: 0.92;
   }
 
+  // Every text element below is tinted from --el-text (set inline per
+  // element — a dark shade of whatever color the card is actually showing,
+  // category or heat) at a shared opacity per role, matching how a grid
+  // cell's own number/symbol/name/mass fade in importance.
   .preview-top {
     display: flex;
     justify-content: space-between;
     font-family: $font-mono;
     font-size: 13px;
     font-weight: 600;
-    opacity: 0.92;
+    color: var(--el-text, #{$text-muted});
+    opacity: 0.8;
   }
 
   .preview-symbol {
@@ -61,14 +66,14 @@
     font-size: 50px;
     font-weight: 700;
     line-height: 1;
-    color: #fff;
-    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.5);
+    color: var(--el-text, #{$text-primary});
   }
 
   .preview-name {
     text-align: center;
     font-size: 16px;
     font-weight: 600;
+    color: var(--el-text, #{$text-primary});
   }
 
   .preview-category {
@@ -76,6 +81,7 @@
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
+    color: var(--el-text, #{$text-muted});
     opacity: 0.85;
     margin-top: 2px;
   }
@@ -83,7 +89,8 @@
   .preview-phase {
     text-align: center;
     font-size: 12px;
-    opacity: 0.9;
+    color: var(--el-text, #{$text-muted});
+    opacity: 0.85;
     margin-top: 3px;
   }
 
@@ -91,7 +98,8 @@
     text-align: center;
     font-size: 11px;
     font-family: $font-mono;
-    opacity: 0.8;
+    color: var(--el-text, #{$text-muted});
+    opacity: 0.75;
     margin-top: 3px;
   }
 
@@ -99,7 +107,8 @@
     text-align: center;
     font-size: 11px;
     font-family: $font-mono;
-    opacity: 0.75;
+    color: var(--el-text, #{$text-faint});
+    opacity: 0.65;
   }
 }
 
@@ -135,10 +144,10 @@
 @keyframes preview-pop {
   from {
     box-shadow:
-      0 0 0 1px rgba(0, 0, 0, 0.3),
-      0 22px 46px -18px rgba(0, 0, 0, 0.8),
-      0 0 0 0 color-mix(in srgb, var(--preview-glow) 22%, transparent),
-      0 0 0 0 color-mix(in srgb, var(--preview-glow) 55%, transparent);
+      0 1px 2px rgba(15, 23, 42, 0.06),
+      0 22px 40px -18px rgba(15, 23, 42, 0.22),
+      0 0 0 0 color-mix(in srgb, var(--preview-glow) 16%, transparent),
+      0 0 0 0 color-mix(in srgb, var(--preview-glow) 30%, transparent);
   }
 }
 

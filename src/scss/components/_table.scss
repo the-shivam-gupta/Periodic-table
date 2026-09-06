@@ -45,11 +45,11 @@
   position: relative;
   width: max-content;
   margin: 0 auto;
-  background: $panel-bg;
+  background: $panel-bg-soft;
   border: 1px solid $panel-border;
   padding: $panel-pad;
-  border-radius: 14px;
-  box-shadow: 0 30px 60px -34px rgba(0, 0, 0, 0.75);
+  border-radius: 16px;
+  box-shadow: $shadow-md;
 }
 
 .table-panel-lan {
@@ -90,7 +90,7 @@
 
   &:hover {
     color: $text-primary;
-    background: rgba(255, 255, 255, 0.08);
+    background: $ink-06;
   }
 }
 
@@ -103,7 +103,7 @@
   &:hover {
     color: $text-primary;
     border-radius: 4px;
-    background: rgba(255, 255, 255, 0.08);
+    background: $ink-06;
   }
 }
 
@@ -149,7 +149,10 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  // Tinted to match whatever color the cell text is showing (--el-text, set
+  // inline per cell) instead of a flat neutral border — falls back to the
+  // neutral tint for cells with no color (e.g. a missing heat value).
+  border: 1px solid color-mix(in srgb, var(--el-text, #{rgba(15, 23, 42, 0.65)}) 22%, transparent);
   border-radius: $border-radius;
   cursor: pointer;
   z-index: 0;
@@ -173,8 +176,8 @@
     font-family: $font-mono;
     font-size: 14px;
     line-height: 1;
-    color: rgba(255, 255, 255, 0.88);
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+    color: var(--el-text, #{$text-muted});
+    opacity: 0.85;
   }
 
   .el-mass {
@@ -185,8 +188,8 @@
     font-size: 10px;
     line-height: 1;
     letter-spacing: -0.01em;
-    color: rgba(255, 255, 255, 0.72);
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+    color: var(--el-text, #{$text-faint});
+    opacity: 0.75;
     pointer-events: none;
   }
 
@@ -195,7 +198,7 @@
     font-weight: 700;
     line-height: 1;
     letter-spacing: -0.02em;
-    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+    color: var(--el-text, #{$text-primary});
   }
 
   .el-name {
@@ -204,7 +207,8 @@
     text-align: center;
     padding: 0 3px;
     width: 100%;
-    color: rgba(255, 255, 255, 0.92);
+    color: var(--el-text, #{$text-muted});
+    opacity: 0.9;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -225,14 +229,13 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     text-align: center;
-    color: rgba(255, 255, 255, 0.95);
+    color: $text-muted;
     opacity: 0;
     transform: scale(0.6);
     pointer-events: none;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 
     &.is-shown {
       opacity: 0.95;
@@ -250,69 +253,27 @@
     font-size: 10px;
     line-height: 1;
     text-align: center;
-    color: rgba(255, 255, 255, 0.9);
+    color: $text-primary;
+    font-weight: 600;
     pointer-events: none;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
   }
 
-  // Elements without a value for the active property stay transparent.
+  // Elements without a value for the active property stay neutral/transparent
+  // — never guessed at, never colored — with just a readable, subtly dashed
+  // border to show a value was expected but isn't recorded.
   &.is-missing {
     background: transparent;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-    opacity: 0.85;
+    box-shadow: inset 0 0 0 1px $panel-border-strong;
+    opacity: 0.75;
   }
 }
 
 // Fallback class for a missing-value card that carries no category gradient.
 .el-void {
   background: transparent;
-}
-
-// --- Connection crosshair overlay ---
-.connections-layer {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 5;
-  pointer-events: none;
-  mix-blend-mode: screen;
-  overflow: visible;
-}
-
-.conn-line {
-  stroke-width: 1;
-  stroke-dasharray: 3 7;
-  opacity: 0;
-  animation: connDraw 0.7s ease forwards;
-  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.35));
-}
-
-.conn-core {
-  opacity: 0;
-  animation: connCore 0.35s 0.2s ease-out forwards;
-  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
-}
-
-@keyframes connDraw {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 0.45;
-  }
-}
-
-@keyframes connCore {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 0.9;
-  }
 }
 
 // --- "Wide / normal" mode: same 18-column layout, roomier cells ---
@@ -426,10 +387,6 @@
       font-size: 11px;
       -webkit-line-clamp: 2;
     }
-  }
-
-  .connections-layer {
-    display: none;
   }
 }
 

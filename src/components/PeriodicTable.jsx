@@ -112,7 +112,11 @@ const PeriodicTable = forwardRef(function PeriodicTable(props, ref) {
   }, [locked, hoverEnabled]);
 
   const renderCell = (el, extraKey) => {
-    if (!el) return <div key={extraKey} className="blank-cell" />;
+    // Blank-cell keys are namespaced ("blank-…") so they can never collide
+    // with a real element's key (its atomic number) — without this, a blank
+    // cell sitting at column index N in a row that also contains the element
+    // with atomic number N (e.g. index 3 vs. Lithium, #3) would share a key.
+    if (!el) return <div key={`blank-${extraKey}`} className="blank-cell" />;
     const heatActive = !!heatStyle;
     const heatFor = heatStyle ? heatStyle(el) : null;
     const missing = heatActive && heatFor === null;

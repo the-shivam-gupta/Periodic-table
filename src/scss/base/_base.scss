@@ -38,14 +38,19 @@ html {
   overflow-x: hidden;
 }
 
+// A clean digital-textbook backdrop: a soft off-white ground with an
+// extremely subtle gradient and a barely-visible grid texture — no particles,
+// no glows, no orbital motifs. The periodic table stays the visual focus.
 body {
   min-height: 100vh;
   max-width: 100vw;
   overflow-x: hidden;
-  background:
-    radial-gradient(1100px 700px at 72% -12%, rgba(88, 120, 220, 0.16), transparent 60%),
-    radial-gradient(900px 560px at 8% 108%, rgba(30, 140, 160, 0.13), transparent 55%),
-    linear-gradient(180deg, #0b101a 0%, #0a0e16 60%, #0d1220 100%);
+  background-color: $page-bg;
+  background-image:
+    linear-gradient(#{$ink-04} 1px, transparent 1px),
+    linear-gradient(90deg, #{$ink-04} 1px, transparent 1px),
+    linear-gradient(180deg, $page-bg-alt 0%, $page-bg 22%, $page-bg 100%);
+  background-size: 40px 40px, 40px 40px, 100% 100%;
   background-attachment: fixed;
   color: $text-primary;
   font-family: $font-body;
@@ -60,7 +65,7 @@ body {
 }
 
 ::selection {
-  background: rgba(122, 167, 255, 0.35);
+  background: rgba(59, 111, 224, 0.18);
 }
 
 ::-webkit-scrollbar {
@@ -68,7 +73,7 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.16);
+  background: $panel-border-strong;
   border-radius: 999px;
 }
 ::-webkit-scrollbar-track {
@@ -87,7 +92,7 @@ body {
   width: 100%;
   max-width: 1760px;
   margin: 0 auto;
-  padding: 48px 20px 56px;
+  padding: 32px 20px 56px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -100,6 +105,7 @@ body {
   letter-spacing: -0.03em;
   line-height: 1;
   overflow-wrap: break-word;
+  color: $text-primary;
 
   .app-title__dot {
     color: $accent;
@@ -118,7 +124,7 @@ body {
   color: $text-faint;
 
   a {
-    color: rgba(255, 255, 255, 0.62);
+    color: $text-muted;
     text-decoration: none;
 
     &:hover {

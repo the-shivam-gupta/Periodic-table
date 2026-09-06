@@ -13,7 +13,7 @@
   left: 16px;
   top: 50%;
   transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.45);
+  color: $text-faint;
   font-size: 18px;
   pointer-events: none;
 }
@@ -22,23 +22,22 @@
   width: 100%;
   padding: 15px 46px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid $panel-border-strong;
+  background: $card-bg;
   color: $text-primary;
   font-size: var(--text-base);
   font-family: $font-body;
   outline: none;
-  backdrop-filter: blur(8px);
+  box-shadow: $shadow-sm;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 
   &::placeholder {
-    color: rgba(255, 255, 255, 0.4);
+    color: $text-faint;
   }
 
   &:focus {
-    border-color: rgba(122, 167, 255, 0.55);
-    box-shadow: 0 0 0 3px rgba(122, 167, 255, 0.14), 0 12px 30px -18px rgba(0, 0, 0, 0.7);
-    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba($accent, 0.55);
+    box-shadow: 0 0 0 3px $accent-soft, $shadow-md;
   }
 }
 
@@ -52,15 +51,15 @@
   border-radius: 50%;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.5);
+  color: $text-faint;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
 
   &:hover {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.1);
+    color: $text-primary;
+    background: $ink-06;
   }
 }
 
@@ -71,10 +70,10 @@
   right: 0;
   list-style: none;
   padding: 8px;
-  background: rgba(19, 24, 38, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: $card-bg;
+  border: 1px solid $panel-border;
   border-radius: 16px;
-  box-shadow: 0 28px 60px -24px rgba(0, 0, 0, 0.8);
+  box-shadow: $shadow-lg;
   z-index: 60;
   max-height: 380px;
   overflow-y: auto;
@@ -97,7 +96,7 @@
 
   &:hover,
   &.is-active {
-    background: rgba(255, 255, 255, 0.07);
+    background: $ink-04;
   }
 }
 
@@ -111,8 +110,7 @@
   border-radius: 9px;
   font-weight: 700;
   font-size: 16px;
-  color: #fff;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  color: $text-primary;
 }
 
 .search__name {

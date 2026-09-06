@@ -7,16 +7,25 @@ import React, {
   useState,
 } from "react";
 import gsap from "gsap";
-import SearchBar from "../components/SearchBar";
+import Header from "../components/Header";
+import HelpModal from "../components/HelpModal";
 import TableToolbar from "../components/TableToolbar";
 import ElementExplorer from "../components/ElementExplorer";
-import BackgroundEffects from "../components/BackgroundEffects";
 import PreviewCard from "../components/PreviewCard";
 import PeriodicTable from "../components/PeriodicTable";
-import ListView from "../components/ListView";
+import ElementsView from "../components/ElementsView";
+import PropertyExplorer from "../components/PropertyExplorer";
+import MoleculesView from "../components/MoleculesView";
 import Game from "../components/Game";
 import { ELEMENTS, NUMBER_MAP } from "../data/elements";
-import { CATEGORIES, categoryColors, categoryShade, titleCategory } from "../data/categories";
+import {
+  CATEGORIES,
+  categoryColors,
+  categoryShade,
+  categoryText,
+  darkenRgbForText,
+  titleCategory,
+} from "../data/categories";
 import { buildCategoryCounts } from "../animations/categoryAnimations";
 import { playPageEntrance } from "../animations/tableAnimations";
 import {
@@ -29,16 +38,26 @@ import {
   getPropertyConfig,
   propertyValue,
   buildScale,
-  formatSig,
-  stopsGradient,
   isMissingValueFor,
+  heatGradientStops,
 } from "../data/propertyScale";
 
+// "Table" is the interactive grid; "Elements" is the sortable/filterable
+// list; "Properties" is the property explorer; "Molecules" is the
+// structural-diagram gallery; "Games" is the games hub (its cards already
+// cover both quiz-style and match-style games).
 const VIEWS = [
-  { key: "table", label: "Table" },
-  { key: "list", label: "List / Properties", shortLabel: "List" },
-  { key: "game", label: "Game" },
+  { key: "table", label: "Periodic Table" },
+  { key: "elements", label: "Elements" },
+  { key: "properties", label: "Properties" },
+  { key: "molecules", label: "Molecules" },
+  { key: "games", label: "Games" },
 ];
+
+// Shown in the center showcase before the user has hovered or opened
+// anything — carbon, a familiar, well-known element — so the showcase never
+// sits empty or shows placeholder text.
+const DEFAULT_SHOWCASE_NUMBER = 6;
 
 export default function App() {
   const [view, setView] = useState("table");
@@ -50,16 +69,18 @@ export default function App() {
   const [showcaseManual, setShowcaseManual] = useState(false);
   const [showNames, setShowNames] = useState(true);
   const [showMass, setShowMass] = useState(true);
-  const [showCategories, setShowCategories] = useState(true);
+  // Off by default — every cell is already tinted by its category, so a text
+  // badge on every single cell as well just reads as noise. "More > Show
+  // Categories" still lets a user opt into the text labels.
+  const [showCategories, setShowCategories] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const rootRef = useRef(null);
-  const cursorRef = useRef(null);
   const previewRef = useRef(null);
   const tableRef = useRef(null);
   const viewPanelRef = useRef(null);
 
-  const searchIndex = useMemo(() => ELEMENTS.map((e) => ({ element: e })), []);
   const categoryCounts = useMemo(() => buildCategoryCounts(ELEMENTS), []);
 
   const heatScale = useMemo(
@@ -98,8 +119,12 @@ export default function App() {
     (el) => {
       const c = heatBaseColor(el);
       if (!c) return null;
-      const soft = c.replace("rgb(", "rgba(").replace(")", ", 0.8)");
-      return `linear-gradient(160deg, ${c}, ${soft})`;
+      // Two distinct lightness stops of the same hue (matching how each
+      // category's own two-stop gradient is authored) instead of the same
+      // color at two opacities — that read as flat/glassless once painted
+      // over the page, since there's nothing else showing through them.
+      const [from, to] = heatGradientStops(c);
+      return `linear-gradient(110deg, ${from}, ${to})`;
     },
     [heatBaseColor]
   );
@@ -158,7 +183,7 @@ export default function App() {
       if (selected) return selected;
     }
     if (heatKey && heatScale && autoShowcase) return autoShowcase;
-    return null;
+    return NUMBER_MAP.get(DEFAULT_SHOWCASE_NUMBER) || null;
   }, [hoveredElement, showcaseNumber, heatKey, heatScale, autoShowcase]);
 
   // Heat mode is active whenever a Color by property (numeric OR categorical) is
@@ -211,6 +236,19 @@ export default function App() {
       : ""
     : "Category";
 
+  // Cell text in the grid is tinted a dark shade of whatever color it's
+  // actually showing (see Element.jsx); the showcase tile matches that —
+  // the category's hue by default, or a dark shade of the exact heat color
+  // once a "Color by" property is active — instead of falling back to flat
+  // black just because a property replaced the category color.
+  const showcaseTextColor = !showcaseEl
+    ? null
+    : heatMode
+      ? showcaseMissing
+        ? null
+        : darkenRgbForText(heatBaseColor(showcaseEl))
+      : categoryText(showcaseEl.category);
+
   const centerNode =
     showcaseEl ? (
       <PropertyShowcase
@@ -218,6 +256,7 @@ export default function App() {
         valueText={showcaseValueText}
         valueLabel={showcaseValueLabel}
         color={showcaseColor}
+        textColor={showcaseTextColor}
         missing={showcaseMissing}
         featured={isFeatured}
       />
@@ -310,30 +349,6 @@ export default function App() {
     tableRef.current?.pulse(relatedFor(selected), 0.45);
   }, [selected, relatedFor]);
 
-  const handleSearchSelect = useCallback(
-    (el) => {
-      if (!el) return;
-      setView("table");
-      window.setTimeout(() => {
-        const node = tableRef.current?.getNode(el.number);
-        if (node) {
-          try {
-            node.scrollIntoView({
-              behavior: prefersReducedMotion() ? "auto" : "smooth",
-              block: "center",
-              inline: "center",
-            });
-          } catch {
-            node.scrollIntoView(true);
-          }
-          tableRef.current?.flash(el.number);
-        }
-        window.setTimeout(() => openDetail(el), 620);
-      }, 60);
-    },
-    [openDetail]
-  );
-
   const handleCategoryChange = useCallback((key) => {
     setActiveCategory(key);
   }, []);
@@ -363,24 +378,6 @@ export default function App() {
       entrance(viewPanelRef.current.querySelectorAll(".view-entrance"));
     }
   }, [view]);
-
-  // Cursor glow
-  useEffect(() => {
-    const el = cursorRef.current;
-    if (!el || prefersReducedMotion()) return;
-    if (typeof window.matchMedia === "function" && !window.matchMedia("(hover: hover)").matches) {
-      return;
-    }
-    const qx = gsap.quickTo(el, "x", { duration: 0.7, ease: "power3.out" });
-    const qy = gsap.quickTo(el, "y", { duration: 0.7, ease: "power3.out" });
-    const onMove = (e) => {
-      qx(e.clientX);
-      qy(e.clientY);
-    };
-    gsap.to(el, { opacity: 1, duration: 1.2, delay: 0.6 });
-    window.addEventListener("pointermove", onMove);
-    return () => window.removeEventListener("pointermove", onMove);
-  }, []);
 
   // Reduce-motion setting (user toggle overrides the OS preference)
   useEffect(() => {
@@ -427,144 +424,39 @@ export default function App() {
 
   return (
     <div className="app" ref={rootRef}>
-      <BackgroundEffects />
-      <div ref={cursorRef} className="cursor-glow" aria-hidden="true" />
+      <Header
+        views={VIEWS}
+        view={view}
+        onViewChange={setView}
+        onOpenHelp={() => setHelpOpen(true)}
+      />
 
-      <main className="app-shell">
-        <section className="hero">
-          <div className="hero__inner">
-            <p className="hero__eyebrow">Interactive · Educational</p>
-            <h1 className="app-title">
-              Periodic Table<span className="app-title__dot">.</span>
-            </h1>
-            <p className="hero__subtitle">
-              The same 118-element dataset, everywhere — table, properties, and games.
-            </p>
-            <SearchBar index={searchIndex} onSelect={handleSearchSelect} />
+      <main className="app-shell" id="top">
+        {view === "table" && (
+          <div className="page-toolbar">
+            <TableToolbar
+              categories={CATEGORIES}
+              counts={categoryCounts}
+              total={ELEMENTS.length}
+              activeCategory={activeCategory}
+              onCategoryChange={handleCategoryChange}
+              heatKey={heatKey}
+              onHeatChange={setHeatKey}
+              showNames={showNames}
+              onToggleNames={() => setShowNames((v) => !v)}
+              showMass={showMass}
+              onToggleMass={() => setShowMass((v) => !v)}
+              showCategories={showCategories}
+              onToggleCategories={() => setShowCategories((v) => !v)}
+              reduceMotion={reduceMotion}
+              onToggleReduceMotion={() => setReduceMotion((v) => !v)}
+            />
           </div>
-        </section>
-
-        <nav className="nav-tabs" aria-label="Primary">
-          {VIEWS.map((v) => (
-            <button
-              key={v.key}
-              type="button"
-              className={`nav-tab${view === v.key ? " is-active" : ""}`}
-              onClick={() => setView(v.key)}
-              aria-label={v.label}
-            >
-              {/* The button's own aria-label carries the accessible name, so
-                  both spans below are purely presentational — whichever one
-                  CSS shows at the current width, the announced name never
-                  changes. */}
-              <span className="nav-tab__full" aria-hidden="true">
-                {v.label}
-              </span>
-              {v.shortLabel && (
-                <span className="nav-tab__short" aria-hidden="true">
-                  {v.shortLabel}
-                </span>
-              )}
-            </button>
-          ))}
-        </nav>
+        )}
 
         <div className="view-panel" ref={viewPanelRef}>
           {view === "table" && (
             <div className="view-entrance">
-              <TableToolbar
-                categories={CATEGORIES}
-                counts={categoryCounts}
-                total={ELEMENTS.length}
-                activeCategory={activeCategory}
-                onCategoryChange={handleCategoryChange}
-                heatKey={heatKey}
-                onHeatChange={setHeatKey}
-                showNames={showNames}
-                onToggleNames={() => setShowNames((v) => !v)}
-                showMass={showMass}
-                onToggleMass={() => setShowMass((v) => !v)}
-                showCategories={showCategories}
-                onToggleCategories={() => setShowCategories((v) => !v)}
-                reduceMotion={reduceMotion}
-                onToggleReduceMotion={() => setReduceMotion((v) => !v)}
-              />
-
-              <p className="table-caption" aria-live="polite">
-                {activeCategory
-                  ? `${categoryCounts[activeCategory] ?? 0} of ${ELEMENTS.length} elements · ${
-                      CATEGORIES.find((c) => c.key === activeCategory)?.label ?? ""
-                    }`
-                  : `${ELEMENTS.length} elements · Hover to preview · Click to explore`}
-              </p>
-
-              <div className="heat-legend">
-                  <span className="heat-legend__title">Coloring by</span>
-                  {heatScale ? (
-                    heatScale.kind === "categorical" ? (
-                      heatConfig?.categoryShaded ? (
-                        <>
-                          <span className="heat-legend__label">
-                            {heatConfig?.label}
-                          </span>
-                          <span className="heat-legend__note">
-                            each element keeps its category color, shaded by its exact value
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="heat-legend__label">
-                            {heatConfig?.label}
-                          </span>
-                          <span className="heat-legend__cats">
-                            {heatScale.values.map((v) => (
-                              <span className="heat-legend__cat" key={v.value}>
-                                <span
-                                  className="heat-legend__swatch"
-                                  style={{ background: v.color }}
-                                  aria-hidden="true"
-                                />
-                                <span className="heat-legend__cat-label">
-                                  {v.value}
-                                </span>
-                              </span>
-                            ))}
-                          </span>
-                        </>
-                      )
-                    ) : (
-                      <>
-                        <span className="heat-legend__label">
-                          {heatConfig?.label}
-                        </span>
-                        <span className="heat-legend__graph">
-                          <span className="heat-legend__min">
-                            {formatSig(heatScale.min, 4)}
-                            {heatConfig?.unit ? ` ${heatConfig.unit}` : ""}
-                          </span>
-                          <span
-                            className="heat-legend__bar"
-                            style={{ background: stopsGradient(90) }}
-                            aria-hidden="true"
-                          />
-                          <span className="heat-legend__max">
-                            {formatSig(heatScale.max, 4)}
-                            {heatConfig?.unit ? ` ${heatConfig.unit}` : ""}
-                          </span>
-                          <span className="heat-legend__low">Low</span>
-                          <span className="heat-legend__space" aria-hidden="true" />
-                          <span className="heat-legend__high">High</span>
-                        </span>
-                        <span className="heat-legend__na">
-                          · some elements lack a value
-                        </span>
-                      </>
-                    )
-                  ) : (
-                    <span className="heat-legend__label">None</span>
-                  )}
-                </div>
-
               <section className="table-section">
                 {/* Mobile-only: a real second render of the showcase, sitting
                     OUTSIDE the horizontally-scrolling table so it stays put
@@ -604,13 +496,25 @@ export default function App() {
             </div>
           )}
 
-          {view === "list" && (
+          {view === "elements" && (
             <div className="view-entrance">
-              <ListView onOpen={openDetail} />
+              <ElementsView onOpen={openDetail} />
             </div>
           )}
 
-          {view === "game" && (
+          {view === "properties" && (
+            <div className="view-entrance">
+              <PropertyExplorer onOpen={openDetail} />
+            </div>
+          )}
+
+          {view === "molecules" && (
+            <div className="view-entrance">
+              <MoleculesView />
+            </div>
+          )}
+
+          {view === "games" && (
             <div className="view-entrance">
               <Game />
             </div>
@@ -641,9 +545,15 @@ export default function App() {
         <ElementExplorer
           element={selected}
           onClose={closeDetail}
+          propertyKey={heatMode ? heatKey : null}
           accentColor={heatMode ? heatBaseColor(selected) : null}
+          missing={
+            heatMode && isMissingValueFor(heatConfig?.kind, propertyValue(selected, heatKey))
+          }
         />
       )}
+
+      {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} />}
     </div>
   );
 }

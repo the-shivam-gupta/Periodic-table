@@ -8,6 +8,12 @@ const W = 240;
 const H = 200;
 const PAD = 26;
 const ATOM_R = 17;
+const DENSE_THRESHOLD = 18;
+const MIN_ATOM_SCALE = 0.65;
+function atomScaleFor(atomCount) {
+  if (atomCount <= DENSE_THRESHOLD) return 1;
+  return Math.max(MIN_ATOM_SCALE, DENSE_THRESHOLD / atomCount);
+}
 
 function atomColor(symbol) {
   const el = SYMBOL_MAP.get(String(symbol).toLowerCase());
@@ -40,6 +46,8 @@ export default function MoleculeVisualization({
 
   const bonds = molecule.bonds || [];
   const atoms = molecule.atoms || [];
+  const scale = atomScaleFor(atoms.length);
+  const atomR = ATOM_R * scale;
 
   const renderBondLines = (i, j, order, keyPrefix) => {
     const ax = px(atoms[i].x);
@@ -48,7 +56,9 @@ export default function MoleculeVisualization({
     const by = py(atoms[j].y);
     const angle = angleBetween(ax, ay, bx, by);
     const perp = [Math.cos(angle + Math.PI / 2), Math.sin(angle + Math.PI / 2)];
-    const offsets = order === 3 ? [-4, 0, 4] : order === 2 ? [-3.5, 3.5] : [0];
+    const offsets = (order === 3 ? [-4, 0, 4] : order === 2 ? [-3.5, 3.5] : [0]).map(
+      (o) => o * scale
+    );
 
     return offsets.map((off, k) => {
       const dx = perp[0] * off;
@@ -91,7 +101,7 @@ export default function MoleculeVisualization({
                     className="mol-atom__halo"
                     cx={px(atom.x)}
                     cy={py(atom.y)}
-                    r={ATOM_R + 3}
+                    r={atomR + 3 * scale}
                     fill={from}
                     opacity="0.18"
                   />
@@ -99,12 +109,18 @@ export default function MoleculeVisualization({
                     className="mol-atom__ball"
                     cx={px(atom.x)}
                     cy={py(atom.y)}
-                    r={ATOM_R}
+                    r={atomR}
                     fill={`url(#molgrad-${molecule.key}-${i})`}
                     stroke={to}
                     strokeWidth="1"
                   />
-                  <text className="mol-symbol" x={px(atom.x)} y={py(atom.y) + 4} textAnchor="middle">
+                  <text
+                    className="mol-symbol"
+                    x={px(atom.x)}
+                    y={py(atom.y) + 4 * scale}
+                    textAnchor="middle"
+                    style={scale < 1 ? { fontSize: `${13 * scale}px`, strokeWidth: `${3 * scale}px` } : undefined}
+                  >
                     {atom.symbol}
                   </text>
                   <defs>

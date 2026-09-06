@@ -3,11 +3,10 @@ import gsap from "gsap";
 import { prefersReducedMotion } from "../animations/usePrefersReducedMotion";
 import { formatSig } from "../data/propertyScale";
 
-// PropertyShowcase renders the selected element as a compact, table-style tile
-// with close annotation pointers. Atomic mass is at the top-right (like every
-// table cell); the symbol, the selected "Color by" property and the atomic mass
-// are annotated on the right, while the atomic number and name are annotated on
-// the left. Lines touch the tile directly (no dots, no gaps).
+// PropertyShowcase renders the selected element as a compact, table-style
+// tile with close annotation pointers. Atomic number and name are annotated
+// on the left; atomic mass, symbol and the selected property are annotated
+// on the right. Lines touch the tile directly (no dots, no gaps).
 //
 // Layout:
 //   Atomic Number ── [ 17      35.45 ] ── Atomic Mass
@@ -19,6 +18,7 @@ const PropertyShowcase = memo(function PropertyShowcase({
   valueText,
   valueLabel,
   color,
+  textColor,
   missing,
   featured,
 }) {
@@ -97,6 +97,9 @@ const PropertyShowcase = memo(function PropertyShowcase({
 
   if (!element) return null;
 
+  const tileStyle = { ...(missing || !color ? {} : { background: color }) };
+  if (textColor) tileStyle["--el-text"] = textColor;
+
   return (
     <div
       className={`showcase${featured ? " is-featured" : ""}${
@@ -130,10 +133,7 @@ const PropertyShowcase = memo(function PropertyShowcase({
         </div>
 
         {/* Center element tile */}
-        <div
-          className={`showcase__tile${missing ? " is-missing" : ""}`}
-          style={missing || !color ? undefined : { background: color }}
-        >
+        <div className={`showcase__tile${missing ? " is-missing" : ""}`} style={tileStyle}>
           <span className="showcase__num">{element.number}</span>
           <span className="showcase__mass">{massText}</span>
           <span className="showcase__symbol">{element.symbol}</span>

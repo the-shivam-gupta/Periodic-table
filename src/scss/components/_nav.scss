@@ -1,69 +1,15 @@
 @use "../utils/_variables" as *;
-@use "../utils/mixins" as *;
 
-// --- Primary tab navigation ---
-.nav-tabs {
+// --- Compact page toolbar (Table view only): Filter / Color by / Legend / More ---
+// Sits directly under the sticky header — no hero, no separate pill nav in
+// between. Navigation between views lives entirely in the header now.
+.page-toolbar {
+  width: 100%;
+  max-width: 1040px;
+  margin: 24px auto 14px;
   display: flex;
-  gap: 8px;
-  margin: 0 auto 30px;
-  padding: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid $panel-border;
-  border-radius: 999px;
-  max-width: 100%;
-}
-
-.nav-tab {
-  padding: 11px 26px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: $text-muted;
-  font-size: var(--text-base);
-  font-family: $font-body;
-  font-weight: 600;
-  line-height: 1.2;
-  cursor: pointer;
-  transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease,
-    transform 0.2s ease;
-
-  &:hover:not(.is-active) {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.07);
-  }
-
-  &.is-active {
-    background: #fff;
-    color: #0b101a;
-    font-weight: 700;
-    box-shadow: 0 10px 26px -12px rgba(255, 255, 255, 0.5);
-  }
-}
-
-// Short label hidden by default (desktop/tablet show the full "List /
-// Properties" text) — swapped in below a width where three tabs, one with
-// that long label, can't fit on one line without either wrapping the pill
-// onto a broken second row or forcing a horizontal-scroll affordance nobody
-// would think to try. Both spans exist purely for CSS-level text swap; the
-// button's own aria-label carries the real accessible name (see App.js) so
-// this never changes what's announced.
-.nav-tab__short {
-  display: none;
-}
-
-@include media('mobile-sm') {
-  .nav-tab {
-    padding: 10px 16px;
-    font-size: var(--text-sm);
-  }
-
-  .nav-tab__full {
-    display: none;
-  }
-
-  .nav-tab__short {
-    display: inline;
-  }
+  align-items: center;
+  justify-content: center;
 }
 
 .view-panel {

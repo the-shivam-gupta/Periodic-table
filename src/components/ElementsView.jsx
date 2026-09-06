@@ -16,6 +16,7 @@ import { formatSig } from "../data/propertyScale";
 import { entrance } from "../animations/gameAnimations";
 import { openPopover, closePopover, positionPopover } from "../animations/toolbarAnimations";
 import useScrollLock from "../hooks/useScrollLock";
+import FilterDropdown from "./FilterDropdown";
 
 const COLUMNS = [
   { key: "name", label: "Element", sortable: true },
@@ -55,11 +56,26 @@ const PAGE_SIZE_OPTIONS = [
 ];
 const PAGE_SIZES = PAGE_SIZE_OPTIONS.map((o) => o.value);
 
-export default function ListView({ onOpen }) {
+const PHASES = Array.from(new Set(ELEMENTS.map((e) => e.phase).filter(Boolean))).sort();
+const GROUPS = Array.from(new Set(ELEMENTS.map((e) => e.group).filter((g) => g != null))).sort(
+  (a, b) => a - b
+);
+const PERIODS = Array.from(new Set(ELEMENTS.map((e) => e.period).filter((p) => p != null))).sort(
+  (a, b) => a - b
+);
+
+// Element List / Explorer — a sortable, filterable, paginated table of all
+// 118 elements. The "Properties" nav item has its own dedicated view
+// (PropertyExplorer) for learning about and visualizing one property at a
+// time; this view is purely about browsing and finding elements.
+export default function ElementsView({ onOpen }) {
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState("number");
   const [sortDir, setSortDir] = useState("asc");
   const [catKey, setCatKey] = useState(null);
+  const [stateKey, setStateKey] = useState("");
+  const [groupKey, setGroupKey] = useState("");
+  const [periodKey, setPeriodKey] = useState("");
   const [catOpen, setCatOpen] = useState(false);
   const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
   const [page, setPage] = useState(1);
@@ -85,6 +101,9 @@ export default function ListView({ onOpen }) {
         const cat = CATEGORIES.find((c) => c.key === catKey);
         if (cat && !cat.match(el)) return false;
       }
+      if (stateKey && el.phase !== stateKey) return false;
+      if (groupKey && String(el.group) !== groupKey) return false;
+      if (periodKey && String(el.period) !== periodKey) return false;
       if (!q) return true;
       return (
         el.name.toLowerCase().includes(q) ||
@@ -103,7 +122,7 @@ export default function ListView({ onOpen }) {
       return String(av).localeCompare(String(bv)) * dir;
     });
     return list;
-  }, [query, sortKey, sortDir, catKey]);
+  }, [query, sortKey, sortDir, catKey, stateKey, groupKey, periodKey]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
 
@@ -111,7 +130,7 @@ export default function ListView({ onOpen }) {
   // jump back to page 1 rather than risk landing on a now-empty page.
   useEffect(() => {
     setPage(1);
-  }, [query, catKey, pageSize]);
+  }, [query, catKey, stateKey, groupKey, periodKey, pageSize]);
 
   // Sorting can also leave the page out of range (e.g. fewer results after a
   // filter change lands `page` past the new last page) — clamp instead.
@@ -264,10 +283,10 @@ export default function ListView({ onOpen }) {
 
   return (
     <div className="list-view">
-      {/* One bordered "Filter" toolbar (icon label + text + category), styled
-          as a table control rather than a second copy of the page's global
-          jump-to-element search — it narrows the rows below, it doesn't
-          navigate anywhere. */}
+      {/* One bordered "Filter" toolbar (icon label + text + category/state/
+          group/period selects), styled as a table control rather than a
+          second copy of the page's global jump-to-element search — it
+          narrows the rows below, it doesn't navigate anywhere. */}
       <div className="list-toolbar">
         <span className="list-toolbar__label">
           <FiFilter aria-hidden="true" />
@@ -336,6 +355,28 @@ export default function ListView({ onOpen }) {
               document.body
             )}
         </div>
+
+        <FilterDropdown
+          label="State"
+          value={stateKey}
+          onChange={setStateKey}
+          options={[{ value: "", label: "All states" }, ...PHASES.map((p) => ({ value: p, label: p }))]}
+        />
+
+        <FilterDropdown
+          label="Group"
+          value={groupKey}
+          onChange={setGroupKey}
+          options={[{ value: "", label: "All groups" }, ...GROUPS.map((g) => ({ value: String(g), label: String(g) }))]}
+        />
+
+        <FilterDropdown
+          label="Period"
+          value={periodKey}
+          onChange={setPeriodKey}
+          options={[{ value: "", label: "All periods" }, ...PERIODS.map((p) => ({ value: String(p), label: String(p) }))]}
+          align="right"
+        />
       </div>
 
       <div className="list-scroll">

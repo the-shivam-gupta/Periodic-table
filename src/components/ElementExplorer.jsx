@@ -1,23 +1,50 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import {
   FiExternalLink,
   FiInfo,
   FiZap,
-  FiThermometer,
-  FiClock,
   FiBookOpen,
   FiGrid,
+  FiLayers,
+  FiArrowLeft,
+  FiStar,
+  FiShare2,
 } from "react-icons/fi";
 import MoleculeVisualization from "./MoleculeVisualization";
 import useScrollLock from "../hooks/useScrollLock";
-import { animateDetailIn, animateDetailOut } from "../animations/modalAnimations";
+import { animateDrawerIn, animateDrawerOut } from "../animations/modalAnimations";
 import { prefersReducedMotion } from "../animations/usePrefersReducedMotion";
-import { categoryColors, titleCategory } from "../data/categories";
-import { formatSig } from "../data/propertyScale";
+import { categoryColors, categoryText, darkenRgbForText, titleCategory } from "../data/categories";
+import {
+  formatSig,
+  getPropertyConfig,
+  buildScale,
+  isMissingValueFor,
+  propertyValue,
+  stopsGradient,
+} from "../data/propertyScale";
+import { ELEMENTS } from "../data/elements";
 import { moleculesContaining } from "../data/molecules";
 
 const has = (v) => v !== null && v !== undefined && v !== "";
+const FAVORITES_KEY = "pt-favorites";
+
+function readFavorites() {
+  try {
+    return new Set(JSON.parse(window.localStorage.getItem(FAVORITES_KEY) || "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
+function writeFavorites(set) {
+  try {
+    window.localStorage.setItem(FAVORITES_KEY, JSON.stringify([...set]));
+  } catch {
+    /* favorites are a nice-to-have, not required to function */
+  }
+}
 
 function Fact({ label, empty, children }) {
   return (
@@ -47,30 +74,120 @@ function SectionTitle({ icon: Icon, children }) {
   );
 }
 
-export default function ElementExplorer({ element, onClose, accentColor }) {
+function NotAvailable({ children }) {
+  return <p className="explorer-not-available">{children} Not available for this element.</p>;
+}
+
+// No "Applications" or "Isotopes" tab: the dataset carries no
+// applications/uses or isotope field for any element, so either would only
+// ever render as a permanently-empty stub.
+const TABS = [
+  { key: "overview", label: "Overview" },
+  { key: "properties", label: "Properties" },
+  { key: "compounds", label: "Compounds" },
+];
+
+export default function ElementExplorer({ element, onClose, accentColor, propertyKey, missing = false }) {
   const rootRef = useRef(null);
   const figureBodyRef = useRef(null);
+  const bodyRef = useRef(null);
   const [imgError, setImgError] = useState(false);
   const [modelError, setModelError] = useState(false);
   const [figureTab, setFigureTab] = useState("photo");
+  const [tab, setTab] = useState("overview");
+  const [favorites, setFavorites] = useState(readFavorites);
+  const [shared, setShared] = useState(false);
   const [from, to] = categoryColors(element.category);
-  // When a "Color by" property is active, the symbol, the active figure tab,
-  // the card wash, the top accent line and the category chip all follow
-  // that property's color for this element (matching the hover preview
-  // card) instead of always falling back to the plain category color —
-  // otherwise opening the explorer while Color-by is on looks like it reset
-  // to "None". There's only one solid color from a heat property (not a
-  // two-stop pair like the category gradients), so it stands in for both
-  // `from` and `to` wherever a gradient needs two stops.
+  // When a "Color by" property is active, the symbol, the card wash, the top
+  // accent line and the category chip all follow that property's color for
+  // this element (matching the hover preview card) instead of always falling
+  // back to the plain category color — otherwise opening the explorer while
+  // Color-by is on looks like it reset to "None". There's only one solid
+  // color from a heat property (not a two-stop pair like the category
+  // gradients), so it stands in for both `from` and `to` wherever a gradient
+  // needs two stops.
   const symbolColor = accentColor || from;
   const symbolColorTo = accentColor || to;
-  const relatedMolecules = moleculesContaining(element.symbol);
+  // The symbol's own text needs to stay readable against its pastel fill, so
+  // — unlike symbolColor/symbolColorTo above, which paint the light
+  // background — it always resolves to a dark, saturated shade: the
+  // category's own dark text color by default, or a darkened version of the
+  // exact "Color by" accent so it still matches whatever the cell is
+  // currently showing (mirrors how .el-symbol gets its color in Element.jsx).
+  // `missing` (this element has no value for the active "Color by" property)
+  // overrides all of that to null/none, matching the grid cell's own
+  // transparent "missing" treatment instead of quietly falling back to the
+  // plain category color — otherwise the explorer looks colored-in for an
+  // element the table itself shows as having no data for that property.
+  const symbolTextColor = missing
+    ? null
+    : accentColor
+      ? darkenRgbForText(accentColor) || categoryText(element.category)
+      : categoryText(element.category);
+  const relatedMolecules = useMemo(
+    () => moleculesContaining(element.symbol),
+    [element.symbol]
+  );
+
+  // Visualization strip at the bottom of Overview — mirrors whichever
+  // property the table is currently colored by; falls back to
+  // Electronegativity (a property every element in the visible set tends to
+  // have) so the strip is never blank on first open.
+  const vizKey = propertyKey || "electronegativity";
+  const vizCfg = getPropertyConfig(vizKey);
+  const vizScale = useMemo(() => buildScale(ELEMENTS, vizKey), [vizKey]);
+  const vizValue = vizCfg ? propertyValue(element, vizKey) : null;
+  const vizMissing = vizCfg ? isMissingValueFor(vizCfg.kind, vizValue) : true;
+  const vizPct =
+    vizScale && vizScale.kind === "numeric" && !vizMissing
+      ? Math.max(0, Math.min(1, vizScale.norm(vizValue))) * 100
+      : null;
+
+  const isFavorite = favorites.has(element.number);
+  const toggleFavorite = () => {
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (next.has(element.number)) next.delete(element.number);
+      else next.add(element.number);
+      writeFavorites(next);
+      return next;
+    });
+  };
+
+  const share = async () => {
+    const text = `${element.name} (${element.symbol}) — atomic number ${element.number}, ${titleCategory(
+      element.category
+    )}, atomic mass ${formatSig(element.atomicMass, 5)} u.`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: `${element.name} — Periodic Table`, text });
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(text);
+        setShared(true);
+        window.setTimeout(() => setShared(false), 1600);
+      }
+    } catch {
+      /* user cancelled the share sheet — nothing to do */
+    }
+  };
 
   useEffect(() => {
     setImgError(false);
     setModelError(false);
     setFigureTab("photo");
+    setTab("overview");
   }, [element.number]);
+
+  // Ease the tab body in on every tab switch instead of letting it pop in.
+  useLayoutEffect(() => {
+    const body = bodyRef.current;
+    if (!body || prefersReducedMotion()) return;
+    gsap.fromTo(
+      body,
+      { opacity: 0, y: 8 },
+      { opacity: 1, y: 0, duration: 0.28, ease: "power2.out", overwrite: "auto" }
+    );
+  }, [tab, element.number]);
 
   // <model-viewer> is a custom element from a fairly large library — load it
   // lazily on first use (opening any element's detail panel) rather than
@@ -84,9 +201,9 @@ export default function ElementExplorer({ element, onClose, accentColor }) {
   const photoAvailable = Boolean(element.image);
   const modelAvailable = Boolean(element.bohrModel3d);
   const showFigureTabs = photoAvailable && modelAvailable;
-  const activeTab = showFigureTabs ? figureTab : modelAvailable ? "3d" : "photo";
-  const showModel = activeTab === "3d" && modelAvailable && !modelError;
-  const showPhoto = activeTab === "photo" && photoAvailable && !imgError;
+  const activeFigTab = showFigureTabs ? figureTab : modelAvailable ? "3d" : "photo";
+  const showModel = activeFigTab === "3d" && modelAvailable && !modelError;
+  const showPhoto = activeFigTab === "photo" && photoAvailable && !imgError;
 
   // Photo/3D Model swap the figure's whole content (an <img> for one, a
   // <model-viewer> for the other) rather than crossfading a shared element,
@@ -100,25 +217,18 @@ export default function ElementExplorer({ element, onClose, accentColor }) {
       { opacity: 0, y: 6 },
       { opacity: 1, y: 0, duration: 0.32, ease: "power2.out", overwrite: "auto" }
     );
-  }, [activeTab, showModel, showPhoto]);
+  }, [activeFigTab, showModel, showPhoto]);
 
   const hasShells = Array.isArray(element.shells) && element.shells.length > 0;
   const hasIonizationEnergies =
     Array.isArray(element.ionizationEnergies) && element.ionizationEnergies.length > 0;
-  const hasAtomicFacts =
-    has(element.electronConfiguration) ||
-    (has(element.electronConfigurationSemantic) &&
-      element.electronConfigurationSemantic !== element.electronConfiguration) ||
-    hasShells ||
-    has(element.electronAffinity) ||
-    has(element.electronegativity) ||
-    hasIonizationEnergies;
   const hasPhysicalFacts =
     has(element.phase) ||
     has(element.density) ||
     has(element.melt) ||
     has(element.boil) ||
     has(element.molarHeat);
+  const hasFigure = photoAvailable || modelAvailable;
 
   const close = useCallback(() => {
     const root = rootRef.current;
@@ -126,7 +236,7 @@ export default function ElementExplorer({ element, onClose, accentColor }) {
       onClose();
       return;
     }
-    const tl = animateDetailOut(root, root.querySelector(".detail-card"));
+    const tl = animateDrawerOut(root, root.querySelector(".detail-card"));
     tl.eventCallback("onComplete", onClose);
   }, [onClose]);
 
@@ -144,7 +254,7 @@ export default function ElementExplorer({ element, onClose, accentColor }) {
     const root = rootRef.current;
     if (!root) return;
     const ctx = gsap.context(() => {
-      animateDetailIn(
+      animateDrawerIn(
         root,
         root.querySelector(".detail-card"),
         root.querySelector(".detail-header"),
@@ -161,53 +271,76 @@ export default function ElementExplorer({ element, onClose, accentColor }) {
       role="dialog"
       aria-modal="true"
       aria-label={`${element.name} details`}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) close();
+      }}
     >
       <div
         className="detail-card explorer-card"
-        style={{
-          // `color-mix` rather than the hex-alpha-suffix trick (`${x}42`) —
-          // symbolColor is a plain hex string for the category-color case,
-          // but an `rgb(r, g, b)` string when a Color-by property is active,
-          // and appending hex digits to an rgb() string just produces
-          // invalid CSS. color-mix works with either.
-          background: `linear-gradient(180deg, color-mix(in srgb, ${symbolColor} 26%, transparent) 0%, color-mix(in srgb, ${symbolColor} 10%, transparent) 40%, color-mix(in srgb, ${symbolColor} 4%, transparent) 100%), linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015) 40%), #121725`,
-        }}
+        style={
+          missing
+            ? undefined
+            : {
+                background: `linear-gradient(180deg, color-mix(in srgb, ${symbolColor} 16%, transparent) 0%, color-mix(in srgb, ${symbolColor} 6%, transparent) 40%, transparent 100%), #ffffff`,
+              }
+        }
       >
-        <button type="button" className="detail-close" onClick={close} aria-label="Close details">
-          <span className="detail-close__glyph detail-close__cross" aria-hidden="true">
-            ×
-          </span>
-          <span className="detail-close__glyph detail-close__minus" aria-hidden="true">
-            −
-          </span>
-        </button>
+        <div className="explorer-breadcrumb">
+          <button type="button" className="explorer-breadcrumb__back" onClick={close} aria-label="Back to elements">
+            <FiArrowLeft aria-hidden="true" />
+            <span>
+              Elements <span className="explorer-breadcrumb__sep">/</span> {element.name}
+            </span>
+          </button>
+          <div className="explorer-breadcrumb__actions">
+            <button
+              type="button"
+              className={`explorer-icon-btn${isFavorite ? " is-active" : ""}`}
+              onClick={toggleFavorite}
+              aria-pressed={isFavorite}
+              aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            >
+              <FiStar aria-hidden="true" />
+            </button>
+            <button type="button" className="explorer-icon-btn" onClick={share} aria-label="Share this element">
+              <FiShare2 aria-hidden="true" />
+            </button>
+            {shared && <span className="explorer-share-toast">Copied</span>}
+          </div>
+        </div>
 
         <header className="detail-header explorer-header">
           <div
-            className="explorer-accent"
-            style={{ background: `linear-gradient(90deg, ${symbolColor}, ${symbolColorTo})` }}
+            className={`explorer-accent${missing ? " is-missing" : ""}`}
+            style={
+              missing
+                ? undefined
+                : { background: `linear-gradient(90deg, ${symbolColor}, ${symbolColorTo})` }
+            }
             aria-hidden="true"
           />
           <div className="explorer-heading">
             <span className="explorer-number">#{element.number}</span>
             <div className="explorer-symbol-block">
-              <span className="explorer-symbol" style={{ color: symbolColor }}>
+              <span
+                className={`explorer-symbol${missing ? " is-missing" : ""}`}
+                style={
+                  missing
+                    ? undefined
+                    : {
+                        background: `linear-gradient(160deg, ${symbolColor}, ${symbolColorTo})`,
+                        color: symbolTextColor,
+                      }
+                }
+              >
                 {element.symbol}
               </span>
               <span className="explorer-name">{element.name}</span>
             </div>
             <span
-              className="detail-category explorer-category-chip"
-              style={{
-                background: `color-mix(in srgb, ${symbolColor} 20%, transparent)`,
-                borderColor: `color-mix(in srgb, ${symbolColor} 60%, transparent)`,
-              }}
+              className={`detail-category explorer-category-chip${missing ? " is-missing" : ""}`}
+              style={missing ? undefined : { background: symbolColor, color: symbolTextColor }}
             >
-              <span
-                className="explorer-category-chip__dot"
-                style={{ background: `linear-gradient(135deg, ${symbolColor}, ${symbolColorTo})` }}
-                aria-hidden="true"
-              />
               {titleCategory(element.category)}
             </span>
             <div className="explorer-quick">
@@ -223,196 +356,256 @@ export default function ElementExplorer({ element, onClose, accentColor }) {
           </div>
         </header>
 
+        <div className="explorer-stat-grid">
+          <Fact label="Atomic Radius" empty={!has(element.atomicRadius)}>
+            {has(element.atomicRadius) ? `${element.atomicRadius} pm` : "Not available"}
+          </Fact>
+          <Fact label="Ionization Energy" empty={!hasIonizationEnergies}>
+            {hasIonizationEnergies ? `${element.ionizationEnergies[0]} kJ/mol` : "Not available"}
+          </Fact>
+          <Fact label="Electronegativity" empty={!has(element.electronegativity)}>
+            {has(element.electronegativity) ? element.electronegativity : "Not available"}
+          </Fact>
+          <Fact label="Melting Point" empty={!has(element.melt)}>
+            {has(element.melt) ? `${element.melt} K` : "Not available"}
+          </Fact>
+          <Fact label="Boiling Point" empty={!has(element.boil)}>
+            {has(element.boil) ? `${element.boil} K` : "Not available"}
+          </Fact>
+          <Fact label="Density" empty={!has(element.density)}>
+            {has(element.density) ? `${element.density} g/cm³` : "Not available"}
+          </Fact>
+        </div>
+
         <div className="detail-body explorer-body">
-          <div className="explorer-layout">
-            <div className="explorer-main">
-              {has(element.summary) && (
+          <div className="explorer-tabs" role="tablist" aria-label={`${element.name} sections`}>
+            {TABS.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                role="tab"
+                aria-selected={tab === t.key}
+                className={`explorer-tab${tab === t.key ? " is-active" : ""}`}
+                onClick={() => setTab(t.key)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="explorer-main" ref={bodyRef} role="tabpanel">
+            {tab === "overview" && (
+              <>
                 <section className="detail-section">
                   <SectionTitle icon={FiInfo}>Overview</SectionTitle>
-                  <p className="detail-summary">{element.summary}</p>
+                  {has(element.summary) ? (
+                    <p className="detail-summary">{element.summary}</p>
+                  ) : (
+                    <NotAvailable>A written overview is</NotAvailable>
+                  )}
                   {has(element.appearance) && (
                     <p className="explorer-appearance">
                       <span className="fact__label">Appearance</span> {element.appearance}
                     </p>
                   )}
                 </section>
-              )}
 
-              {hasAtomicFacts && (
+                {hasFigure && (
+                  <section className="detail-section">
+                    <figure className="explorer-figure">
+                      {showFigureTabs && (
+                        <div
+                          className="explorer-figure-tabs"
+                          role="tablist"
+                          aria-label={`${element.name} figure view`}
+                        >
+                          <button
+                            type="button"
+                            role="tab"
+                            aria-selected={figureTab === "photo"}
+                            className={`explorer-figure-tab${figureTab === "photo" ? " is-active" : ""}`}
+                            onClick={() => setFigureTab("photo")}
+                          >
+                            Photo
+                          </button>
+                          <button
+                            type="button"
+                            role="tab"
+                            aria-selected={figureTab === "3d"}
+                            className={`explorer-figure-tab${figureTab === "3d" ? " is-active" : ""}`}
+                            onClick={() => setFigureTab("3d")}
+                          >
+                            3D Model
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="explorer-figure-body" ref={figureBodyRef}>
+                        {showModel ? (
+                          <>
+                            <div className="explorer-model-wrap">
+                              {/* eslint-disable-next-line react/no-unknown-property */}
+                              <model-viewer
+                                key={element.bohrModel3d}
+                                src={element.bohrModel3d}
+                                alt={`${element.name} 3D atomic model`}
+                                camera-controls
+                                auto-rotate
+                                rotation-per-second="16deg"
+                                interaction-prompt="none"
+                                shadow-intensity="0"
+                                loading="eager"
+                                onError={() => setModelError(true)}
+                              />
+                            </div>
+                            <figcaption className="explorer-attribution">
+                              Drag to rotate · scroll to zoom
+                            </figcaption>
+                          </>
+                        ) : showPhoto ? (
+                          <>
+                            <div className="explorer-image-wrap">
+                              <img
+                                className="explorer-image"
+                                src={element.image.url}
+                                alt={element.image.title || `${element.name} sample`}
+                                loading="lazy"
+                                onError={() => setImgError(true)}
+                              />
+                            </div>
+                            <figcaption className="explorer-attribution">
+                              {element.image.title}
+                            </figcaption>
+                          </>
+                        ) : (
+                          <div className="explorer-image-fallback" style={{ background: from }}>
+                            <span>{element.symbol}</span>
+                            <em>
+                              No {activeFigTab === "3d" ? "3D model" : "image"} available for {element.name}
+                            </em>
+                          </div>
+                        )}
+                      </div>
+                    </figure>
+                  </section>
+                )}
+
+                <section className="detail-section">
+                  <SectionTitle icon={FiInfo}>Discovery</SectionTitle>
+                  <div className="fact-grid">
+                    <Fact label="Discovered by" empty={!has(element.discoveredBy)}>
+                      {element.discoveredBy || "Unknown / ancient"}
+                    </Fact>
+                    <Fact label="Named by" empty={!has(element.namedBy)}>
+                      {element.namedBy || "Unknown"}
+                    </Fact>
+                    <Fact label="Year Discovered" empty={!has(element.yearDiscovered)}>
+                      {element.yearDiscovered || "Ancient"}
+                    </Fact>
+                  </div>
+                </section>
+
+                {vizCfg && vizPct != null && (
+                  <section className="detail-section">
+                    <p className="explorer-viz__label">
+                      Visualization: {vizCfg.label}
+                      {vizCfg.unit ? ` (${vizCfg.unit})` : ""}
+                    </p>
+                    <div className="explorer-viz">
+                      <span className="explorer-viz__end">Low</span>
+                      <span className="explorer-viz__bar" style={{ background: stopsGradient(90) }}>
+                        <span className="explorer-viz__marker" style={{ left: `${vizPct}%` }} />
+                      </span>
+                      <span className="explorer-viz__end">High</span>
+                    </div>
+                  </section>
+                )}
+
+                {(has(element.source) || has(element.image && element.image.attribution)) && (
+                  <section className="detail-section">
+                    <SectionTitle icon={FiBookOpen}>Sources</SectionTitle>
+                    <ul className="explorer-sources">
+                      {has(element.source) && (
+                        <li>
+                          <a
+                            className="explorer-source"
+                            href={element.source}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {element.name} — periodic-table dataset article <FiExternalLink />
+                          </a>
+                        </li>
+                      )}
+                      {has(element.image && element.image.attribution) && (
+                        <li className="explorer-source-note">{element.image.attribution}</li>
+                      )}
+                    </ul>
+                  </section>
+                )}
+              </>
+            )}
+
+            {tab === "properties" && (
+              <>
                 <section className="detail-section">
                   <SectionTitle icon={FiZap}>Atomic Properties</SectionTitle>
                   <div className="fact-grid">
-                    {has(element.electronConfiguration) && (
-                      <Fact label="Electron Config">{element.electronConfiguration}</Fact>
-                    )}
+                    <Fact label="Electron Config" empty={!has(element.electronConfiguration)}>
+                      {element.electronConfiguration || "Not available"}
+                    </Fact>
                     {element.electronConfigurationSemantic !== element.electronConfiguration &&
                       has(element.electronConfigurationSemantic) && (
                         <Fact label="Short Form">{element.electronConfigurationSemantic}</Fact>
                       )}
-                    {hasShells && <Fact label="Shells">{element.shells.join(" · ")}</Fact>}
-                    {has(element.electronAffinity) && (
-                      <Fact label="Electron Affinity">{element.electronAffinity} kJ/mol</Fact>
-                    )}
-                    {has(element.electronegativity) && (
-                      <Fact label="Electronegativity">{element.electronegativity}</Fact>
-                    )}
-                    {hasIonizationEnergies && (
-                      <Fact label="Ionization Energy">
-                        {element.ionizationEnergies.join(" · ")} kJ/mol
-                      </Fact>
-                    )}
+                    <Fact label="Shells" empty={!hasShells}>
+                      {hasShells ? element.shells.join(" · ") : "Not available"}
+                    </Fact>
+                    <Fact label="Electron Affinity" empty={!has(element.electronAffinity)}>
+                      {has(element.electronAffinity) ? `${element.electronAffinity} kJ/mol` : "Not available"}
+                    </Fact>
+                    <Fact label="Oxidation States" empty={!has(element.oxidationStates)}>
+                      {element.oxidationStates || "Not available"}
+                    </Fact>
+                    <Fact label="Standard State" empty={!has(element.standardState)}>
+                      {element.standardState || "Not available"}
+                    </Fact>
                   </div>
                 </section>
-              )}
 
-              {hasPhysicalFacts && (
                 <section className="detail-section">
-                  <SectionTitle icon={FiThermometer}>Physical Properties</SectionTitle>
-                  <div className="fact-grid">
-                    {has(element.phase) && <Fact label="Phase">{element.phase}</Fact>}
-                    {has(element.density) && (
-                      <Fact label="Density">{element.density} g/cm³</Fact>
-                    )}
-                    {has(element.melt) && <Fact label="Melting Point">{element.melt} K</Fact>}
-                    {has(element.boil) && <Fact label="Boiling Point">{element.boil} K</Fact>}
-                    {has(element.molarHeat) && (
-                      <Fact label="Molar Heat">{element.molarHeat} J/(mol·K)</Fact>
-                    )}
-                  </div>
-                </section>
-              )}
-
-              <section className="detail-section">
-                <SectionTitle icon={FiClock}>Discovery</SectionTitle>
-                <div className="fact-grid">
-                  <Fact label="Discovered by" empty={!has(element.discoveredBy)}>
-                    {element.discoveredBy || "Unknown / ancient"}
-                  </Fact>
-                  <Fact label="Named by" empty={!has(element.namedBy)}>
-                    {element.namedBy || "Unknown"}
-                  </Fact>
-                </div>
-              </section>
-            </div>
-
-            <aside className="explorer-side">
-              <figure className="explorer-figure">
-                {showFigureTabs && (
-                  <div
-                    className="explorer-figure-tabs"
-                    role="tablist"
-                    aria-label={`${element.name} figure view`}
-                    style={{ "--figure-tab-active": symbolColor }}
-                  >
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={figureTab === "photo"}
-                      className={`explorer-figure-tab${figureTab === "photo" ? " is-active" : ""}`}
-                      onClick={() => setFigureTab("photo")}
-                    >
-                      Photo
-                    </button>
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={figureTab === "3d"}
-                      className={`explorer-figure-tab${figureTab === "3d" ? " is-active" : ""}`}
-                      onClick={() => setFigureTab("3d")}
-                    >
-                      3D Model
-                    </button>
-                  </div>
-                )}
-
-                <div className="explorer-figure-body" ref={figureBodyRef}>
-                  {showModel ? (
-                    <>
-                      <div className="explorer-model-wrap">
-                        {/* eslint-disable-next-line react/no-unknown-property */}
-                        <model-viewer
-                          key={element.bohrModel3d}
-                          src={element.bohrModel3d}
-                          alt={`${element.name} 3D atomic model`}
-                          camera-controls
-                          auto-rotate
-                          rotation-per-second="16deg"
-                          interaction-prompt="none"
-                          shadow-intensity="0"
-                          loading="eager"
-                          onError={() => setModelError(true)}
-                        />
-                      </div>
-                      <figcaption className="explorer-attribution">
-                        Drag to rotate · scroll to zoom
-                      </figcaption>
-                    </>
-                  ) : showPhoto ? (
-                    <>
-                      <div className="explorer-image-wrap">
-                        <img
-                          className="explorer-image"
-                          src={element.image.url}
-                          alt={element.image.title || `${element.name} sample`}
-                          loading="lazy"
-                          onError={() => setImgError(true)}
-                        />
-                      </div>
-                      <figcaption className="explorer-attribution">
-                        {element.image.title}
-                      </figcaption>
-                    </>
-                  ) : (
-                    <div
-                      className="explorer-image-fallback"
-                      style={{ background: `linear-gradient(155deg, ${from}, transparent)` }}
-                    >
-                      <span>{element.symbol}</span>
-                      <em>
-                        No {activeTab === "3d" ? "3D model" : "image"} available for {element.name}
-                      </em>
+                  <SectionTitle icon={FiLayers}>Physical Properties</SectionTitle>
+                  {hasPhysicalFacts ? (
+                    <div className="fact-grid">
+                      {has(element.phase) && <Fact label="Phase">{element.phase}</Fact>}
+                      {has(element.density) && <Fact label="Density">{element.density} g/cm³</Fact>}
+                      {has(element.melt) && <Fact label="Melting Point">{element.melt} K</Fact>}
+                      {has(element.boil) && <Fact label="Boiling Point">{element.boil} K</Fact>}
+                      {has(element.molarHeat) && (
+                        <Fact label="Molar Heat">{element.molarHeat} J/(mol·K)</Fact>
+                      )}
                     </div>
+                  ) : (
+                    <NotAvailable>Physical property data is</NotAvailable>
                   )}
-                </div>
-              </figure>
+                </section>
+              </>
+            )}
 
-              {relatedMolecules.length > 0 && (
-                <section className="detail-section explorer-mols">
-                  <SectionTitle icon={FiGrid}>Related Molecules</SectionTitle>
+            {tab === "compounds" && (
+              <section className="detail-section explorer-mols">
+                <SectionTitle icon={FiGrid}>Related Molecules</SectionTitle>
+                {relatedMolecules.length > 0 ? (
                   <div className="explorer-mols__grid">
                     {relatedMolecules.slice(0, 3).map((m) => (
                       <MoleculeVisualization key={m.key} molecule={m} className="molecule--mini" />
                     ))}
                   </div>
-                </section>
-              )}
-
-              {(has(element.source) ||
-                has(element.image && element.image.attribution) ||
-                has(element.spectralImg) ||
-                has(element.bohrModelImage)) && (
-                <section className="detail-section">
-                  <SectionTitle icon={FiBookOpen}>Sources</SectionTitle>
-                  <ul className="explorer-sources">
-                    {has(element.source) && (
-                      <li>
-                        <a
-                          className="explorer-source"
-                          href={element.source}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          {element.name} — periodic-table dataset article <FiExternalLink />
-                        </a>
-                      </li>
-                    )}
-                    {has(element.image && element.image.attribution) && (
-                      <li className="explorer-source-note">{element.image.attribution}</li>
-                    )}
-                  </ul>
-                </section>
-              )}
-            </aside>
+                ) : (
+                  <NotAvailable>Compound data is</NotAvailable>
+                )}
+              </section>
+            )}
           </div>
         </div>
       </div>

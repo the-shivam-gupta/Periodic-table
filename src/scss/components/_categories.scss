@@ -5,10 +5,10 @@
 @include category-gradients();
 
 .el-default {
-  background: #64748b; // slate-500 fallback for "unknown …" categories
+  background: #e7eaef; // neutral light gray fallback for "unknown …" categories
 }
 
 // Highlighted/dimmed visual states (opacity/scale are animated via GSAP).
 .element-cell.is-dimmed {
-  filter: saturate(0.4);
+  filter: saturate(0.5);
 }
