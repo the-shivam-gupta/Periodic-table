@@ -745,10 +745,9 @@
 }
 
 .explorer-mols__grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 14px;
-  justify-content: center;
 }
 
 .explorer-sources {
