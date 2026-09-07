@@ -22,6 +22,9 @@
 }
 
 html {
+  // Native controls (scrollbars, form inputs, text inputs) take the right
+  // rendering for each theme; flipped on [data-theme="dark"] below.
+  color-scheme: light;
   scroll-behavior: auto;
   // Reserve the vertical scrollbar's width permanently instead of letting it
   // appear/disappear as content height changes (e.g. switching table pages)
@@ -60,12 +63,16 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
 #root {
   overflow-x: hidden;
 }
 
 ::selection {
-  background: rgba(59, 111, 224, 0.18);
+  background: color-mix(in srgb, var(--c-accent) 18%, transparent);
 }
 
 ::-webkit-scrollbar {

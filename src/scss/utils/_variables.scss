@@ -1,40 +1,227 @@
 // --- Theme / Base ---
 // Light, calm, educational palette — soft off-white page, white cards, dark
 // navy/charcoal text, one muted blue accent + one soft teal secondary accent.
-$page-bg: #f3f5f8; // soft off-white / very light gray
-$page-bg-alt: #eef1f6;
-$panel-bg: #ffffff;
-$panel-bg-soft: #fafbfd; // table panel — a hair off pure white so pastel cells read clearly
-$card-bg: #ffffff;
-$text-primary: #1b2430; // dark navy / charcoal
-$text-muted: #5b6472; // slate gray
-$text-faint: #8a93a1;
-$panel-border: #e6e9ef;
-$panel-border-strong: #d7dce4;
-$accent: #3b6fe0; // muted blue
-$accent-soft: rgba(59, 111, 224, 0.1);
-$accent-strong: #2a56c4;
-$teal: #12968c; // soft teal — secondary accent
-$teal-soft: rgba(18, 150, 140, 0.12);
-$success: #1f9d63;
-$success-soft: rgba(31, 157, 99, 0.12);
-$danger: #d6455b;
-$danger-soft: rgba(214, 69, 91, 0.12);
-$warning: #c8952a;
-$warning-soft: rgba(200, 149, 42, 0.14);
+//
+// Colours are authored as CSS custom properties (`--c-*`) so the whole app can
+// switch theme by flipping a single `data-theme` attribute on <html>. The Sass
+// variables below just alias those custom properties, keeping every existing
+// `$foo` usage in the stylesheets working unchanged while resolving to
+// theme-aware values at runtime.
+//
+// Custom properties are registered via `@property` (with `inherits: true`) so
+// they interpolate — `:root` sweeps through them on transitions, which is what
+// makes every colour in the app crossfade when the theme is toggled instead of
+// snapping. Shadow tokens are full <shadow>-list values and can't be
+// interpolated, so they're deliberately NOT registered; surfaces that use them
+// get an explicit `transition: box-shadow` instead.
 
-// Reusable dark-on-light overlay tints, replacing the old white-on-dark
-// rgba(255,255,255, X) hairlines/hovers used throughout every component.
-$ink-04: rgba(15, 23, 42, 0.04);
-$ink-06: rgba(15, 23, 42, 0.06);
-$ink-08: rgba(15, 23, 42, 0.08);
-$ink-12: rgba(15, 23, 42, 0.12);
-$ink-18: rgba(15, 23, 42, 0.18);
-$overlay-scrim: rgba(15, 20, 30, 0.5);
+:root {
+  --c-page-bg: #f3f5f8; // soft off-white / very light gray
+  --c-page-bg-alt: #eef1f6;
+  --c-panel-bg: #ffffff;
+  --c-panel-bg-soft: #fafbfd; // table panel — a hair off pure white so pastel cells read clearly
+  --c-card-bg: #ffffff;
+  --c-text-primary: #1b2430; // dark navy / charcoal
+  --c-text-muted: #5b6472; // slate gray
+  --c-text-faint: #8a93a1;
+  --c-panel-border: #e6e9ef;
+  --c-panel-border-strong: #d7dce4;
+  --c-accent: #3b6fe0; // muted blue
+  --c-accent-soft: rgba(59, 111, 224, 0.1);
+  --c-accent-strong: #2a56c4;
+  --c-teal: #12968c; // soft teal — secondary accent
+  --c-teal-soft: rgba(18, 150, 140, 0.12);
+  --c-success: #1f9d63;
+  --c-success-soft: rgba(31, 157, 99, 0.12);
+  --c-danger: #d6455b;
+  --c-danger-soft: rgba(214, 69, 91, 0.12);
+  --c-warning: #c8952a;
+  --c-warning-soft: rgba(200, 149, 42, 0.14);
 
-$shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
-$shadow-md: 0 10px 24px -14px rgba(15, 23, 42, 0.16);
-$shadow-lg: 0 24px 48px -20px rgba(15, 23, 42, 0.2);
+  // Reusable dark-on-light overlay tints, replacing the old white-on-dark
+  // rgba(255,255,255, X) hairlines/hovers used throughout every component.
+  --c-ink-04: rgba(15, 23, 42, 0.04);
+  --c-ink-06: rgba(15, 23, 42, 0.06);
+  --c-ink-08: rgba(15, 23, 42, 0.08);
+  --c-ink-12: rgba(15, 23, 42, 0.12);
+  --c-ink-18: rgba(15, 23, 42, 0.18);
+  --c-overlay-scrim: rgba(15, 20, 30, 0.5);
+  --c-overlay-scrim-soft: rgba(15, 23, 42, 0.32);
+
+  // Background grid-line tint on the page backdrop (colour only — the body's
+  // layered background-image snaps, but the fade-out of the page colour is
+  // what dominates the eye during a theme switch).
+  --c-grid-line: rgba(15, 23, 42, 0.04);
+
+  // Fallback for the per-cell "--el-text" border tint when a cell has no
+  // colour of its own (e.g. a missing heat value).
+  --c-el-border-fallback: rgba(15, 23, 42, 0.65);
+
+  // Emissive dark backdrop behind the 3D Bohr models (the pale orbit rings
+  // baked into the model assets need a dark wash to stay visible).
+  --c-model-backdrop: #1b2430;
+
+  // Sticky header sits semi-transparent over the page so scrolling content
+  // bleeds through the blur.
+  --c-header-bg: rgba(255, 255, 255, 0.86);
+
+  --c-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --c-shadow-md: 0 10px 24px -14px rgba(15, 23, 42, 0.16);
+  --c-shadow-lg: 0 24px 48px -20px rgba(15, 23, 42, 0.2);
+  --c-shadow-drawer: -24px 0 60px -30px rgba(15, 23, 42, 0.3);
+  --c-shadow-sheet: 0 -20px 48px -24px rgba(15, 23, 42, 0.3);
+}
+
+[data-theme="dark"] {
+  --c-page-bg: #0e1420;
+  --c-page-bg-alt: #111826;
+  --c-panel-bg: #16202f;
+  --c-panel-bg-soft: #131c29;
+  --c-card-bg: #16202f;
+  --c-text-primary: #e8ecf4;
+  --c-text-muted: #98a2b3;
+  --c-text-faint: #6b7688;
+  --c-panel-border: #232e40;
+  --c-panel-border-strong: #303c52;
+  --c-accent: #6f97f2;
+  --c-accent-soft: rgba(111, 151, 242, 0.14);
+  --c-accent-strong: #8fb0f5;
+  --c-teal: #2fc6ba;
+  --c-teal-soft: rgba(47, 198, 186, 0.14);
+  --c-success: #3ecf8c;
+  --c-success-soft: rgba(62, 207, 140, 0.14);
+  --c-danger: #f07b8f;
+  --c-danger-soft: rgba(240, 123, 143, 0.14);
+  --c-warning: #dfb04f;
+  --c-warning-soft: rgba(223, 176, 79, 0.16);
+
+  // Light-on-dark overlay tints.
+  --c-ink-04: rgba(226, 236, 255, 0.05);
+  --c-ink-06: rgba(226, 236, 255, 0.07);
+  --c-ink-08: rgba(226, 236, 255, 0.09);
+  --c-ink-12: rgba(226, 236, 255, 0.13);
+  --c-ink-18: rgba(226, 236, 255, 0.19);
+  --c-overlay-scrim: rgba(4, 8, 16, 0.6);
+  --c-overlay-scrim-soft: rgba(4, 8, 16, 0.55);
+
+  --c-grid-line: rgba(226, 236, 255, 0.045);
+  --c-el-border-fallback: rgba(226, 236, 255, 0.55);
+  --c-model-backdrop: #0a0f18;
+  --c-header-bg: rgba(14, 20, 32, 0.86);
+
+  --c-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --c-shadow-md: 0 10px 24px -14px rgba(0, 0, 0, 0.5);
+  --c-shadow-lg: 0 24px 48px -20px rgba(0, 0, 0, 0.6);
+  --c-shadow-drawer: -24px 0 60px -30px rgba(0, 0, 0, 0.6);
+  --c-shadow-sheet: 0 -20px 48px -24px rgba(0, 0, 0, 0.6);
+}
+
+// --- Registered, interpolatable custom properties ---
+// Registering a custom property (with a <color> syntax and inherits: true)
+// lets it be transitioned, so gradients and derived colours built from these
+// variables crossfade when their value changes on a theme switch.
+
+@property --c-page-bg { syntax: "<color>"; inherits: true; initial-value: #f3f5f8; }
+@property --c-page-bg-alt { syntax: "<color>"; inherits: true; initial-value: #eef1f6; }
+@property --c-panel-bg { syntax: "<color>"; inherits: true; initial-value: #ffffff; }
+@property --c-panel-bg-soft { syntax: "<color>"; inherits: true; initial-value: #fafbfd; }
+@property --c-card-bg { syntax: "<color>"; inherits: true; initial-value: #ffffff; }
+@property --c-text-primary { syntax: "<color>"; inherits: true; initial-value: #1b2430; }
+@property --c-text-muted { syntax: "<color>"; inherits: true; initial-value: #5b6472; }
+@property --c-text-faint { syntax: "<color>"; inherits: true; initial-value: #8a93a1; }
+@property --c-panel-border { syntax: "<color>"; inherits: true; initial-value: #e6e9ef; }
+@property --c-panel-border-strong { syntax: "<color>"; inherits: true; initial-value: #d7dce4; }
+@property --c-accent { syntax: "<color>"; inherits: true; initial-value: #3b6fe0; }
+@property --c-accent-strong { syntax: "<color>"; inherits: true; initial-value: #2a56c4; }
+@property --c-accent-soft { syntax: "<color>"; inherits: true; initial-value: rgba(59, 111, 224, 0.1); }
+@property --c-teal { syntax: "<color>"; inherits: true; initial-value: #12968c; }
+@property --c-teal-soft { syntax: "<color>"; inherits: true; initial-value: rgba(18, 150, 140, 0.12); }
+@property --c-success { syntax: "<color>"; inherits: true; initial-value: #1f9d63; }
+@property --c-success-soft { syntax: "<color>"; inherits: true; initial-value: rgba(31, 157, 99, 0.12); }
+@property --c-danger { syntax: "<color>"; inherits: true; initial-value: #d6455b; }
+@property --c-danger-soft { syntax: "<color>"; inherits: true; initial-value: rgba(214, 69, 91, 0.12); }
+@property --c-warning { syntax: "<color>"; inherits: true; initial-value: #c8952a; }
+@property --c-warning-soft { syntax: "<color>"; inherits: true; initial-value: rgba(200, 149, 42, 0.14); }
+@property --c-ink-04 { syntax: "<color>"; inherits: true; initial-value: rgba(15, 23, 42, 0.04); }
+@property --c-ink-06 { syntax: "<color>"; inherits: true; initial-value: rgba(15, 23, 42, 0.06); }
+@property --c-ink-08 { syntax: "<color>"; inherits: true; initial-value: rgba(15, 23, 42, 0.08); }
+@property --c-ink-12 { syntax: "<color>"; inherits: true; initial-value: rgba(15, 23, 42, 0.12); }
+@property --c-ink-18 { syntax: "<color>"; inherits: true; initial-value: rgba(15, 23, 42, 0.18); }
+@property --c-overlay-scrim { syntax: "<color>"; inherits: true; initial-value: rgba(15, 20, 30, 0.5); }
+@property --c-overlay-scrim-soft { syntax: "<color>"; inherits: true; initial-value: rgba(15, 23, 42, 0.32); }
+@property --c-grid-line { syntax: "<color>"; inherits: true; initial-value: rgba(15, 23, 42, 0.04); }
+@property --c-el-border-fallback { syntax: "<color>"; inherits: true; initial-value: rgba(15, 23, 42, 0.65); }
+@property --c-model-backdrop { syntax: "<color>"; inherits: true; initial-value: #1b2430; }
+@property --c-header-bg { syntax: "<color>"; inherits: true; initial-value: rgba(255, 255, 255, 0.86); }
+
+// Per-element gradient/tint variables driven from JS or per-category classes.
+@property --cat-from { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --cat-to { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --heat-from { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --heat-to { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --sc-from { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --sc-to { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --el-text { syntax: "<color>"; inherits: true; initial-value: #1b2430; }
+@property --preview-glow { syntax: "<color>"; inherits: true; initial-value: #3b6fe0; }
+
+// The 350ms sweep that makes the whole page crossfade on a theme toggle. All
+// registered colour tokens live on :root, so every descendant reading one of
+// these variables picks up the interpolated value each frame.
+:root {
+  transition:
+    --c-page-bg 350ms ease, --c-page-bg-alt 350ms ease,
+    --c-panel-bg 350ms ease, --c-panel-bg-soft 350ms ease,
+    --c-card-bg 350ms ease, --c-text-primary 350ms ease,
+    --c-text-muted 350ms ease, --c-text-faint 350ms ease,
+    --c-panel-border 350ms ease, --c-panel-border-strong 350ms ease,
+    --c-accent 350ms ease, --c-accent-strong 350ms ease,
+    --c-accent-soft 350ms ease, --c-teal 350ms ease, --c-teal-soft 350ms ease,
+    --c-success 350ms ease, --c-success-soft 350ms ease,
+    --c-danger 350ms ease, --c-danger-soft 350ms ease,
+    --c-warning 350ms ease, --c-warning-soft 350ms ease,
+    --c-ink-04 350ms ease, --c-ink-06 350ms ease, --c-ink-08 350ms ease,
+    --c-ink-12 350ms ease, --c-ink-18 350ms ease,
+    --c-overlay-scrim 350ms ease, --c-overlay-scrim-soft 350ms ease,
+    --c-grid-line 350ms ease, --c-el-border-fallback 350ms ease,
+    --c-model-backdrop 350ms ease, --c-header-bg 350ms ease;
+}
+
+$page-bg: var(--c-page-bg);
+$page-bg-alt: var(--c-page-bg-alt);
+$panel-bg: var(--c-panel-bg);
+$panel-bg-soft: var(--c-panel-bg-soft);
+$card-bg: var(--c-card-bg);
+$text-primary: var(--c-text-primary);
+$text-muted: var(--c-text-muted);
+$text-faint: var(--c-text-faint);
+$panel-border: var(--c-panel-border);
+$panel-border-strong: var(--c-panel-border-strong);
+$accent: var(--c-accent);
+$accent-soft: var(--c-accent-soft);
+$accent-strong: var(--c-accent-strong);
+$teal: var(--c-teal);
+$teal-soft: var(--c-teal-soft);
+$success: var(--c-success);
+$success-soft: var(--c-success-soft);
+$danger: var(--c-danger);
+$danger-soft: var(--c-danger-soft);
+$warning: var(--c-warning);
+$warning-soft: var(--c-warning-soft);
+
+$ink-04: var(--c-ink-04);
+$ink-06: var(--c-ink-06);
+$ink-08: var(--c-ink-08);
+$ink-12: var(--c-ink-12);
+$ink-18: var(--c-ink-18);
+$overlay-scrim: var(--c-overlay-scrim);
+$overlay-scrim-soft: var(--c-overlay-scrim-soft);
+$header-bg: var(--c-header-bg);
+
+$shadow-sm: var(--c-shadow-sm);
+$shadow-md: var(--c-shadow-md);
+$shadow-lg: var(--c-shadow-lg);
+$shadow-drawer: var(--c-shadow-drawer);
+$shadow-sheet: var(--c-shadow-sheet);
 
 // --- Typography ---
 $font-display: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -69,4 +256,23 @@ $gradients: (
   "transition-metal":       (#d2e0f4, #a5c1e9),
   "post-transition-metal":  (#d7d2f4, #b0a5e9),
   "noble-gas":              (#ecd2f4, #d8a5e9),
+);
+
+// --- Element category gradients (mid-dark, dark theme) ---
+// Same hue family per category, dropped to a mid-dark, slightly more saturated
+// tone so each category stays recognizably "its" colour against the dark page
+// while light pastel cell text keeps a calm, readable contrast.
+$gradients-dark: (
+  "alkali-metal":           (#8a4f55, #6a3a40),
+  "alkaline-earth-metal":   (#8a6a46, #6c5138),
+  "halogen":                (#8a7548, #6e5f38),
+  "actinide":               (#5f854f, #4a6640),
+  "nonmetal":               (#4f8566, #3d684e),
+  "diatomic-nonmetal":      (#4f8566, #3d684e),
+  "polyatomic-nonmetal":    (#4f8566, #3d684e),
+  "metalloid":              (#44857e, #356a64),
+  "lanthanide":             (#3f707f, #305762),
+  "transition-metal":       (#3d5e91, #304a70),
+  "post-transition-metal":  (#4b4490, #3c366e),
+  "noble-gas":              (#7a4d94, #603d74),
 );

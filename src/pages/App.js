@@ -20,12 +20,16 @@ import Game from "../components/Game";
 import { ELEMENTS, NUMBER_MAP } from "../data/elements";
 import {
   CATEGORIES,
-  categoryColors,
+  themeFillColor,
+  themedCategoryColors,
+  themedCategoryText,
   categoryShade,
-  categoryText,
   darkenRgbForText,
+  lightenRgbForText,
+  gradientStops,
   titleCategory,
 } from "../data/categories";
+import { useTheme } from "../theme/ThemeContext";
 import { buildCategoryCounts } from "../animations/categoryAnimations";
 import { playPageEntrance } from "../animations/tableAnimations";
 import {
@@ -60,6 +64,7 @@ const VIEWS = [
 const DEFAULT_SHOWCASE_NUMBER = 6;
 
 export default function App() {
+  const { theme, isDark } = useTheme();
   const [view, setView] = useState("table");
   const [selected, setSelected] = useState(null);
   const [activeCategory, setActiveCategory] = useState(null);
@@ -119,14 +124,13 @@ export default function App() {
     (el) => {
       const c = heatBaseColor(el);
       if (!c) return null;
-      // Two distinct lightness stops of the same hue (matching how each
-      // category's own two-stop gradient is authored) instead of the same
-      // color at two opacities — that read as flat/glassless once painted
-      // over the page, since there's nothing else showing through them.
-      const [from, to] = heatGradientStops(c);
+      // Map the pastel heat color onto the active theme (mid-dark in dark
+      // mode), then build the usual two lightness stops of the same hue.
+      const themed = themeFillColor(c, theme);
+      const [from, to] = heatGradientStops(themed, theme);
       return `linear-gradient(110deg, ${from}, ${to})`;
     },
-    [heatBaseColor]
+    [heatBaseColor, theme]
   );
 
   const heatBadgeFor = useCallback(
@@ -224,10 +228,11 @@ export default function App() {
     if (heatMode) {
       const v = propertyValue(showcaseEl, heatKey);
       if (isMissingValueFor(heatConfig?.kind, v)) return undefined;
-      return heatStyleFor(showcaseEl);
+      const [from, to] = gradientStops(heatStyleFor(showcaseEl));
+      return from && to ? { from, to, angle: 110 } : undefined;
     }
-    const [from, to] = categoryColors(showcaseEl.category);
-    return from && to ? `linear-gradient(180deg, ${from}, ${to})` : undefined;
+    const [from, to] = themedCategoryColors(showcaseEl.category, theme);
+    return from && to ? { from, to, angle: 180 } : undefined;
   })();
 
   const showcaseValueLabel = heatMode
@@ -236,18 +241,21 @@ export default function App() {
       : ""
     : "Category";
 
-  // Cell text in the grid is tinted a dark shade of whatever color it's
-  // actually showing (see Element.jsx); the showcase tile matches that —
-  // the category's hue by default, or a dark shade of the exact heat color
-  // once a "Color by" property is active — instead of falling back to flat
-  // black just because a property replaced the category color.
+  // Cell text in the grid is tinted a shade of whatever color it's actually
+  // showing (see Element.jsx); the showcase tile matches that — the
+  // category's hue by default, or a shade of the exact heat color once a
+  // "Color by" property is active — instead of falling back to flat black
+  // just because a property replaced the category color. Dark theme uses the
+  // light tint variant so text holds contrast on the mid-dark fills.
   const showcaseTextColor = !showcaseEl
     ? null
     : heatMode
       ? showcaseMissing
         ? null
-        : darkenRgbForText(heatBaseColor(showcaseEl))
-      : categoryText(showcaseEl.category);
+        : isDark
+          ? lightenRgbForText(heatBaseColor(showcaseEl))
+          : darkenRgbForText(heatBaseColor(showcaseEl))
+      : themedCategoryText(showcaseEl.category, theme);
 
   const centerNode =
     showcaseEl ? (

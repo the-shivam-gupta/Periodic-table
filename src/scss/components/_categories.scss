@@ -2,10 +2,28 @@
 @use "../utils/mixins" as *;
 
 // --- Category gradient utilities ---
+// Each category class only exposes its gradient via the --cat-from/--cat-to
+// custom properties (see utils/mixins.scss). The shared summary rule below
+// paints the actual background, so the class list stays clean and a dark theme
+// override just swaps the variables.
 @include category-gradients();
 
+// Neutral light gray fallback for "unknown …" categories.
 .el-default {
-  background: #e7eaef; // neutral light gray fallback for "unknown …" categories
+  --cat-from: #e7eaef;
+  --cat-to: #d7dce4;
+}
+
+[data-theme="dark"] {
+  .el-default {
+    --cat-from: #47515e;
+    --cat-to: #39424c;
+  }
+
+  // Mid-dark versions of every category gradient (same hue family, tuned
+  // lightness + saturation so the category identity stays recognizable while
+  // keeping calm contrast on the dark page).
+  @include category-gradients($gradients-dark);
 }
 
 // Highlighted/dimmed visual states (opacity/scale are animated via GSAP).

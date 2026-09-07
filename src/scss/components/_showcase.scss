@@ -18,7 +18,7 @@
   &.is-featured {
     .showcase__tile {
       box-shadow:
-        0 0 0 1px rgba($accent, 0.4),
+        0 0 0 1px color-mix(in srgb, var(--c-accent) 40%, transparent),
         0 0 0 5px $accent-soft,
         $shadow-md;
     }
@@ -43,7 +43,7 @@
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #000;
+  color: var(--c-text-primary);
   white-space: nowrap;
   user-select: none;
 
@@ -54,7 +54,7 @@
     height: 1px;
     background: repeating-linear-gradient(
       90deg,
-      #000 0 5px,
+      var(--c-text-primary) 0 5px,
       transparent 5px 9px
     );
   }
@@ -136,6 +136,15 @@
   gap: 8px;
   will-change: transform;
   background: $panel-bg;
+  // The tile's gradient is painted inline from the registered --sc-from/--sc-to
+  // variables (App.js/PropertyShowcase.jsx), so those — plus --el-text and the
+  // box-shadow list ($shadow-md is unregistered) — need explicit transitions to
+  // crossfade on a theme switch.
+  transition:
+    --sc-from 350ms ease,
+    --sc-to 350ms ease,
+    --el-text 350ms ease,
+    box-shadow 350ms ease;
 
   &.is-missing {
     background: transparent;

@@ -36,7 +36,7 @@
   }
 
   &:focus {
-    border-color: rgba($accent, 0.55);
+    border-color: color-mix(in srgb, var(--c-accent) 55%, transparent);
     box-shadow: 0 0 0 3px $accent-soft, $shadow-md;
   }
 }
@@ -77,6 +77,7 @@
   z-index: 60;
   max-height: 380px;
   overflow-y: auto;
+  transition: box-shadow 350ms ease;
 }
 
 .search__result {

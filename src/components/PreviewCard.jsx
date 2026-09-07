@@ -1,37 +1,58 @@
-import { categoryColors, categoryAccent, categoryText, darkenRgbForText, titleCategory } from "../data/categories";
+import { useTheme } from "../theme/ThemeContext";
+import {
+  categoryAccent,
+  categoryAccentDark,
+  themedCategoryColors,
+  themedCategoryText,
+  darkenRgbForText,
+  lightenRgbForText,
+  titleCategory,
+} from "../data/categories";
 import { formatSig } from "../data/propertyScale";
 
 // Pulls the first rgb()/rgba() color out of a gradient string — matches the
 // whole function call rather than splitting on commas, since the color
-// itself contains commas (see Element.jsx's firstGradientColor for the bug
-// that naive comma-splitting caused).
+// itself contains commas (see Element.jsx for the bug that naive
+// comma-splitting caused).
 function firstColor(gradient) {
   const m = /rgba?\([^)]+\)/.exec(gradient || "");
   return m ? m[0] : null;
 }
 
 const PreviewCard = ({ element, className, innerRef, background, glowColor, missing }) => {
+  const { theme, isDark } = useTheme();
   if (!element) return null;
 
   // Match whatever color this element is actually showing on the table —
   // the active "Color by" heat color when one is selected, otherwise its
-  // plain category gradient. When the element has no value for the active
-  // property, match the grid cell's own "missing" treatment (transparent,
-  // outlined) instead of falling back to a color.
-  const [from, to] = categoryColors(element.category);
-  const backgroundImage = background || `linear-gradient(160deg, ${from}, ${to})`;
+  // plain category gradient (theme-aware). When the element has no value for
+  // the active property, match the grid cell's own "missing" treatment
+  // (transparent, outlined) instead of falling back to a color.
+  const [catFrom, catTo] = themedCategoryColors(element.category, theme);
+  const backgroundImage = background || `linear-gradient(160deg, ${catFrom}, ${catTo})`;
   // The glow ring follows the same source as the fill — the active heat
   // color when one's selected, otherwise a saturated "ink" version of the
   // category color (the pastel fill itself is too pale for a visible glow).
-  const glow = glowColor || categoryAccent(element.category);
-  // Text is tinted a dark shade of whatever color the card is actually
-  // showing — same treatment as a grid cell — instead of falling back to
-  // flat black once a "Color by" property replaces the category color.
+  // In dark mode both become their light tints so the ring reads on the
+  // dark page.
+  const glow = glowColor
+    ? isDark
+      ? lightenRgbForText(glowColor) || glowColor
+      : glowColor
+    : isDark
+      ? categoryAccentDark(element.category)
+      : categoryAccent(element.category);
+  // Text is tinted a shade of whatever color the card is actually showing —
+  // same treatment as a grid cell — light tints in dark mode, dark shades in
+  // light mode. --el-text is always set so the registered property behaves
+  // in both themes.
   const textColor = missing
-    ? null
+    ? "var(--c-text-muted)"
     : background
-      ? darkenRgbForText(firstColor(background))
-      : categoryText(element.category);
+      ? isDark
+        ? lightenRgbForText(firstColor(background))
+        : darkenRgbForText(firstColor(background))
+      : themedCategoryText(element.category, theme);
   const has = (v) => v !== null && v !== undefined;
 
   return (
@@ -40,12 +61,12 @@ const PreviewCard = ({ element, className, innerRef, background, glowColor, miss
       className={`preview-card${missing ? " is-missing" : ""} ${className || ""}`}
       style={
         missing
-          ? undefined
+          ? { "--el-text": "var(--c-text-muted)" }
           : {
-              backgroundColor: "#ffffff",
+              backgroundColor: "var(--c-card-bg)",
               backgroundImage,
               "--preview-glow": glow,
-              ...(textColor ? { "--el-text": textColor } : null),
+              "--el-text": textColor,
             }
       }
     >

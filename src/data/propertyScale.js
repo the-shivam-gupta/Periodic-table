@@ -14,10 +14,19 @@ import { rgbToHsl, hslToRgb } from "./categories";
 // barely shows once painted over the page's own background, which is why
 // "Color by" cells used to look flatter/less glassy than category cells;
 // two distinct lightness stops of the same hue reproduces that same sheen.
-export function heatGradientStops(rgbString) {
+//
+// In dark mode the input is expected to already be a themeFillColor base
+// (lightness ~40), so the pair is built around that slightly-dark value:
+// from ≈ l+9 for a soft top highlight, to ≈ l-6 for the deeper edge.
+export function heatGradientStops(rgbString, theme = "light") {
   const m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(rgbString || "");
   if (!m) return [rgbString, rgbString];
   const [h, s, l] = rgbToHsl(Number(m[1]), Number(m[2]), Number(m[3]));
+  if (theme === "dark") {
+    const from = hslToRgb(h, s, Math.min(52, l + 9));
+    const to = hslToRgb(h, Math.min(100, s + 4), Math.max(28, l - 6));
+    return [`rgb(${from.join(", ")})`, `rgb(${to.join(", ")})`];
+  }
   const from = hslToRgb(h, s, Math.min(96, l + 5));
   const to = hslToRgb(h, Math.min(100, s + 4), Math.max(55, l - 11));
   return [`rgb(${from.join(", ")})`, `rgb(${to.join(", ")})`];
@@ -223,11 +232,22 @@ export const STOPS = [
   [1.0, [246, 173, 165]],
 ];
 
-export function stopsGradient(direction = 90) {
-  const stops = STOPS.map(
-    ([t, rgb]) => `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]}) ${t * 100}%`
-  ).join(", ");
-  return `linear-gradient(${direction}deg, ${stops})`;
+// Same low→high hue sequence for the dark theme — mid-dark, slightly more
+// saturated versions that keep their hue encoding visible on the dark page
+// (used for the scale/legend gradient; cell colors are derived from the light
+// STOPS and mapped with themeFillColor in the components).
+export const DARK_STOPS = [
+  [0.0, [74, 108, 176]],
+  [0.35, [41, 120, 108]],
+  [0.68, [163, 131, 51]],
+  [1.0, [168, 92, 84]],
+];
+
+export function stopsGradient(direction = 90, stops = STOPS) {
+  const trimmed = stops
+    .map(([t, rgb]) => `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]}) ${t * 100}%`)
+    .join(", ");
+  return `linear-gradient(${direction}deg, ${trimmed})`;
 }
 
 function lerp(a, b, t) {

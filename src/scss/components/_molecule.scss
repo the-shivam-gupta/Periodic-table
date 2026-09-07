@@ -31,7 +31,7 @@
 
 .mol-symbol {
   fill: $text-primary;
-  stroke: #ffffff;
+  stroke: var(--c-card-bg, #{$card-bg});
   stroke-width: 3px;
   paint-order: stroke;
   font-family: $font-mono;
@@ -161,6 +161,7 @@
   border-radius: 12px;
   background: $card-bg;
   box-shadow: $shadow-sm;
+  transition: box-shadow 350ms ease;
 }
 
 .molecules-toolbar__label {
@@ -242,7 +243,7 @@
 
   &.is-active {
     background: $accent-soft;
-    border-color: rgba($accent, 0.4);
+    border-color: color-mix(in srgb, var(--c-accent) 40%, transparent);
     color: $accent-strong;
   }
 }
@@ -301,6 +302,6 @@
 
 .molecules-page-num.is-active {
   background: $accent-soft;
-  border-color: rgba($accent, 0.4);
+  border-color: color-mix(in srgb, var(--c-accent) 40%, transparent);
   color: $accent-strong;
 }

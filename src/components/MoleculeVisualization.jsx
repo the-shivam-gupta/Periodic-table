@@ -1,8 +1,9 @@
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { SYMBOL_MAP } from "../data/elements";
-import { categoryColors, DEFAULT_COLOR } from "../data/categories";
+import { themedCategoryColors, DEFAULT_COLOR, DEFAULT_COLOR_DARK } from "../data/categories";
 import { drawMolecule } from "../animations/moleculeAnimations";
+import { useTheme } from "../theme/ThemeContext";
 
 const W = 240;
 const H = 200;
@@ -15,10 +16,10 @@ function atomScaleFor(atomCount) {
   return Math.max(MIN_ATOM_SCALE, DENSE_THRESHOLD / atomCount);
 }
 
-function atomColor(symbol) {
+function atomColor(symbol, theme) {
   const el = SYMBOL_MAP.get(String(symbol).toLowerCase());
-  if (!el) return DEFAULT_COLOR;
-  return categoryColors(el.category);
+  if (!el) return theme === "dark" ? DEFAULT_COLOR_DARK : DEFAULT_COLOR;
+  return themedCategoryColors(el.category, theme);
 }
 
 const px = (x) => PAD + x * (W - PAD * 2);
@@ -34,6 +35,7 @@ export default function MoleculeVisualization({
   showCaption = true,
 }) {
   const rootRef = useRef(null);
+  const { theme } = useTheme();
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
@@ -94,7 +96,7 @@ export default function MoleculeVisualization({
               renderBondLines(i, j, order, `bond-${b}`)
             )}
             {atoms.map((atom, i) => {
-              const [from, to] = atomColor(atom.symbol);
+              const [from, to] = atomColor(atom.symbol, theme);
               return (
                 <g key={i} className="mol-atom" style={{ transformOrigin: "center" }}>
                   <circle

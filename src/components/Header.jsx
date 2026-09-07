@@ -1,14 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { FiMenu, FiX, FiHelpCircle } from "react-icons/fi";
+import { FiMenu, FiX, FiHelpCircle, FiSun, FiMoon } from "react-icons/fi";
 import useScrollLock from "../hooks/useScrollLock";
 import { prefersReducedMotion } from "../animations/usePrefersReducedMotion";
+import { useTheme } from "../theme/ThemeContext";
 
 // Sticky site header: brand on the left, the primary navigation in the
-// center, and a Help entry + hamburger (on narrow screens) on the right.
-// Collapses to a hamburger drawer on narrow screens instead of overflowing
-// or wrapping onto a second row.
+// center, and the theme toggle + Help entry + hamburger (on narrow screens)
+// on the right. Collapses to a hamburger drawer on narrow screens instead of
+// overflowing or wrapping onto a second row.
 export default function Header({ views, view, onViewChange, onOpenHelp }) {
+  const { isDark, toggleTheme } = useTheme();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navRef = useRef(null);
   const indicatorRef = useRef(null);
@@ -122,6 +124,23 @@ export default function Header({ views, view, onViewChange, onOpenHelp }) {
         </nav>
 
         <div className="site-header__actions">
+          <button
+            type="button"
+            className={`theme-toggle${isDark ? " is-dark" : ""}`}
+            aria-pressed={isDark}
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            onClick={toggleTheme}
+          >
+            <span className="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">
+              <FiSun />
+            </span>
+            <span className="theme-toggle__thumb" aria-hidden="true" />
+            <span className="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true">
+              <FiMoon />
+            </span>
+          </button>
+
           <button type="button" className="site-header__icon-btn site-header__help" aria-label="Help & about" onClick={onOpenHelp}>
             <FiHelpCircle />
           </button>

@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FiSearch, FiX } from "react-icons/fi";
-import { categoryColors } from "../data/categories";
+import { themedCategoryColors } from "../data/categories";
+import { useTheme } from "../theme/ThemeContext";
 
 export default function SearchBar({
   index,
   onSelect,
   placeholder = "Search by name, symbol, or number…",
 }) {
+  const { theme } = useTheme();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(-1);
   const [open, setOpen] = useState(false);
@@ -98,7 +100,7 @@ export default function SearchBar({
       {showList && (
         <ul className="search__results" role="listbox" id="search-results-list">
           {results.map(({ element }, i) => {
-            const [from, to] = categoryColors(element.category);
+            const [from, to] = themedCategoryColors(element.category, theme);
             return (
               <li key={element.number}>
                 <button

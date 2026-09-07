@@ -19,6 +19,69 @@ export const CATEGORY_COLORS = {
 
 export const DEFAULT_COLOR = ["#E7EAEF", "#D7DCE4"];
 
+// --- Dark theme variants ---
+// Same hue family per category dropped to a mid-dark, slightly more saturated
+// tone, so each category stays recognizable against the dark page while the
+// light text keeps a calm, readable contrast. Mirrors $gradients-dark in
+// _variables.scss — a change here must be mirrored there (and vice versa).
+
+export const CATEGORY_COLORS_DARK = {
+  "alkali metal": ["#8A4F55", "#6A3A40"],
+  "alkaline earth metal": ["#8A6A46", "#6C5138"],
+  halogen: ["#8A7548", "#6E5F38"],
+  actinide: ["#5F854F", "#4A6640"],
+  nonmetal: ["#4F8566", "#3D684E"],
+  "diatomic nonmetal": ["#4F8566", "#3D684E"],
+  "polyatomic nonmetal": ["#4F8566", "#3D684E"],
+  metalloid: ["#44857E", "#356A64"],
+  lanthanide: ["#3F707F", "#305762"],
+  "transition metal": ["#3D5E91", "#304A70"],
+  "post-transition metal": ["#4B4490", "#3C366E"],
+  "noble gas": ["#7A4D94", "#603D74"],
+};
+
+export const DEFAULT_COLOR_DARK = ["#47515E", "#39424C"];
+
+// Grease for dark fills: a light, tinted version of each category's hue used
+// as the TEXT color (number/symbol/name/mass) on top of the mid-dark fill.
+export const CATEGORY_TEXT_DARK = {
+  "alkali metal": "#F8DADD",
+  "alkaline earth metal": "#F7E3CD",
+  halogen: "#F8EECE",
+  actinide: "#DEEECB",
+  nonmetal: "#D8F1E3",
+  "diatomic nonmetal": "#D8F1E3",
+  "polyatomic nonmetal": "#D8F1E3",
+  metalloid: "#D3F1EC",
+  lanthanide: "#D3ECF5",
+  "transition metal": "#D8E4F7",
+  "post-transition metal": "#E4DEFF",
+  "noble gas": "#F1DFFB",
+};
+
+export const DEFAULT_TEXT_DARK = "#E3E8EF";
+
+// Light, saturated version of each category's hue for the dark theme — used
+// where the light theme uses the dark "ink" accents (hover glow rings, active
+// filter borders), because a dark saturated accent would vanish on the dark
+// page. Mirrors CATEGORY_ACCENT's role, not its darkness.
+export const CATEGORY_ACCENT_DARK = {
+  "alkali metal": "#FF8A94",
+  "alkaline earth metal": "#FFA566",
+  halogen: "#FFD566",
+  actinide: "#8EE866",
+  nonmetal: "#5CFF9E",
+  "diatomic nonmetal": "#5CFF9E",
+  "polyatomic nonmetal": "#5CFF9E",
+  metalloid: "#5CFFEF",
+  lanthanide: "#5CC8FF",
+  "transition metal": "#5C8CFF",
+  "post-transition metal": "#7A5CFF",
+  "noble gas": "#C45CFF",
+};
+
+export const DEFAULT_ACCENT_DARK = "#98A2B3";
+
 // A single, more saturated "ink" per category — used only where a pastel
 // fill would be too pale to read (hover glow rings, active filter borders),
 // never as a background of its own.
@@ -62,6 +125,32 @@ export const DEFAULT_TEXT = "#1B2430";
 
 export function categoryText(category) {
   return CATEGORY_TEXT[category] || DEFAULT_TEXT;
+}
+
+export function categoryColorsDark(category) {
+  return CATEGORY_COLORS_DARK[category] || DEFAULT_COLOR_DARK;
+}
+
+export function categoryTextDark(category) {
+  return CATEGORY_TEXT_DARK[category] || DEFAULT_TEXT_DARK;
+}
+
+export function categoryAccentDark(category) {
+  return CATEGORY_ACCENT_DARK[category] || DEFAULT_ACCENT_DARK;
+}
+
+// Theme-aware lookups: pass "light"/"dark" from useTheme() and use the result
+// straight in styles/JSX — no per-call-site branching needed.
+export function themedCategoryColors(category, theme) {
+  return theme === "dark" ? categoryColorsDark(category) : categoryColors(category);
+}
+
+export function themedCategoryText(category, theme) {
+  return theme === "dark" ? categoryTextDark(category) : categoryText(category);
+}
+
+export function themedCategoryAccent(category, theme) {
+  return theme === "dark" ? categoryAccentDark(category) : categoryAccent(category);
 }
 
 export const FILTER_COLORS = {
@@ -175,6 +264,40 @@ export function darkenRgbForText(rgbString) {
   if (!m) return null;
   const [h] = rgbToHsl(Number(m[1]), Number(m[2]), Number(m[3]));
   const [r, g, b] = hslToRgb(h, 58, 28);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+// Splits a "linear-gradient(...)" string into its [first, second] color
+// args — matches full rgb()/rgba() function calls (they contain commas) so
+// the split is never fooled by a color's internal commas.
+export function gradientStops(gradient) {
+  const m = (gradient || "").match(/rgba?\([^)]+\)/g) || [];
+  return [m[0] || null, m[1] || null];
+}
+
+// Light, tinted text color in the same hue family as a heat color — the dark
+// theme counterpart of darkenRgbForText(): pastel heat fills get a light text
+// so the cell keeps its hue identity while staying readable.
+export function lightenRgbForText(rgbString) {
+  const m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(rgbString || "");
+  if (!m) return null;
+  const [h] = rgbToHsl(Number(m[1]), Number(m[2]), Number(m[3]));
+  const [r, g, b] = hslToRgb(h, 60, 80);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+// Maps a "Color by property" heat/fill base color onto the current theme. In
+// light mode the pastel base is returned untouched; in dark mode the same hue
+// is dropped to a mid-dark, slightly-saturated tone (lightness 40, saturation
+// clamped 38–62) so heat distributions keep their exact hue encoding but sit
+// comfortably on the dark page. Safe to call with arbitrary "rgb()" strings.
+export function themeFillColor(rgbString, theme) {
+  if (theme !== "dark") return rgbString;
+  const m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(rgbString || "");
+  if (!m) return rgbString;
+  const [h, s] = rgbToHsl(Number(m[1]), Number(m[2]), Number(m[3]));
+  const newS = Math.max(38, Math.min(62, s));
+  const [r, g, b] = hslToRgb(h, newS, 40);
   return `rgb(${r}, ${g}, ${b})`;
 }
 

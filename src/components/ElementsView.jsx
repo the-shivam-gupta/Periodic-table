@@ -11,7 +11,8 @@ import {
   FiChevronRight,
 } from "react-icons/fi";
 import { ELEMENTS } from "../data/elements";
-import { CATEGORIES, categoryColors, FILTER_COLORS, DEFAULT_COLOR } from "../data/categories";
+import { CATEGORIES, themedCategoryColors } from "../data/categories";
+import { useTheme } from "../theme/ThemeContext";
 import { formatSig } from "../data/propertyScale";
 import { entrance } from "../animations/gameAnimations";
 import { openPopover, closePopover, positionPopover } from "../animations/toolbarAnimations";
@@ -69,6 +70,7 @@ const PERIODS = Array.from(new Set(ELEMENTS.map((e) => e.period).filter((p) => p
 // (PropertyExplorer) for learning about and visualizing one property at a
 // time; this view is purely about browsing and finding elements.
 export default function ElementsView({ onOpen }) {
+  const { theme } = useTheme();
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState("number");
   const [sortDir, setSortDir] = useState("asc");
@@ -327,7 +329,7 @@ export default function ElementsView({ onOpen }) {
                 <div className="td-popover__body">
                   {[{ key: null, label: "All categories" }, ...CATEGORIES].map((c) => {
                     const active = catKey === c.key;
-                    const [from, to] = c.key ? FILTER_COLORS[c.key] || DEFAULT_COLOR : [null, null];
+                    const [from, to] = c.key ? themedCategoryColors(c.key.replace(/-/g, " "), theme) : [null, null];
                     return (
                       <button
                         key={c.key ?? "all"}
@@ -404,7 +406,7 @@ export default function ElementsView({ onOpen }) {
           </thead>
           <tbody ref={rowsRef}>
             {paginated.map((el) => {
-              const [from, to] = categoryColors(el.category);
+              const [from, to] = themedCategoryColors(el.category, theme);
               return (
                 <tr key={el.number} className="list-row" onClick={() => onOpen(el)}>
                   <td className="list-cell--name">

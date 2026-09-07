@@ -53,9 +53,9 @@
 
   &.is-open {
     background: $accent-soft;
-    border-color: rgba($accent, 0.4);
+    border-color: color-mix(in srgb, var(--c-accent) 40%, transparent);
     color: $accent-strong;
-    box-shadow: 0 0 0 3px rgba($accent, 0.12);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-accent) 12%, transparent);
 
     strong {
       color: $accent-strong;
@@ -100,6 +100,9 @@
   border-radius: 14px;
   box-shadow: $shadow-lg;
   will-change: transform, opacity;
+  // $shadow-lg is an unregistered shadow token — transition the whole list
+  // so the popover's depth crossfades on a theme switch.
+  transition: box-shadow 350ms ease;
 }
 
 .td-popover__head {
@@ -144,7 +147,7 @@
   background: $page-bg;
 
   &:focus-within {
-    border-color: rgba($accent, 0.5);
+    border-color: color-mix(in srgb, var(--c-accent) 50%, transparent);
     box-shadow: 0 0 0 3px $accent-soft;
   }
 }
@@ -219,7 +222,7 @@
 
   &.is-active {
     background: $accent-soft;
-    border-color: rgba($accent, 0.3);
+    border-color: color-mix(in srgb, var(--c-accent) 30%, transparent);
     color: $accent-strong;
     font-weight: 600;
   }
@@ -271,12 +274,17 @@
   opacity: 0.9;
 }
 
+// Same low→high hue sequence in the mid-dark tones for the dark theme.
+[data-theme="dark"] .td-item__heat {
+  background: linear-gradient(90deg, rgb(74, 108, 176), rgb(41, 120, 108), rgb(168, 92, 84));
+}
+
 .td-swatch {
   flex: none;
   width: 14px;
   height: 14px;
   border-radius: 5px;
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.14);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-text-primary) 14%, transparent);
 
   &--all {
     background: conic-gradient(
@@ -292,6 +300,22 @@
       #f6c4c6
     );
   }
+}
+
+// "All categories" swatch in the same family of mid-dark fills.
+[data-theme="dark"] .td-swatch--all {
+  background: conic-gradient(
+    from 0deg,
+    #8a4f55,
+    #8a6a46,
+    #8a7548,
+    #5f854f,
+    #4f8566,
+    #44857e,
+    #4b4490,
+    #7a4d94,
+    #8a4f55
+  );
 }
 
 .td-check {

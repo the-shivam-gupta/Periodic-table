@@ -49,6 +49,7 @@
   border: 1px solid $panel-border;
   background: $card-bg;
   box-shadow: $shadow-sm;
+  transition: box-shadow 350ms ease;
 }
 
 .game-cards {
@@ -281,19 +282,19 @@
   &.game-feedback--ok {
     background: $success-soft;
     color: $success;
-    border: 1px solid rgba($success, 0.35);
+    border: 1px solid color-mix(in srgb, var(--c-success) 35%, transparent);
   }
 
   &.game-feedback--no {
     background: $danger-soft;
     color: $danger;
-    border: 1px solid rgba($danger, 0.35);
+    border: 1px solid color-mix(in srgb, var(--c-danger) 35%, transparent);
   }
 
   &.game-feedback--time {
     background: $warning-soft;
     color: $warning;
-    border: 1px solid rgba($warning, 0.35);
+    border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
   }
 }
 
@@ -315,7 +316,7 @@
   margin: 18px auto 0;
   padding: 11px 26px;
   border-radius: 999px;
-  border: 1px solid rgba($accent, 0.4);
+  border: 1px solid color-mix(in srgb, var(--c-accent) 40%, transparent);
   background: $accent;
   color: #fff;
   font-size: 14.5px;
@@ -352,7 +353,8 @@
   text-align: center;
   font-family: $font-body;
   box-shadow: $shadow-sm;
-  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease,
+    box-shadow 0.2s ease;
 
   &:hover:not(.is-correct):not(.is-wrong) {
     background: $ink-04;
@@ -362,12 +364,12 @@
 
   &.is-correct {
     background: $success-soft;
-    border-color: rgba($success, 0.5);
+    border-color: color-mix(in srgb, var(--c-success) 50%, transparent);
   }
 
   &.is-wrong {
     background: $danger-soft;
-    border-color: rgba($danger, 0.5);
+    border-color: color-mix(in srgb, var(--c-danger) 50%, transparent);
   }
 
   .game-option__name {
@@ -417,7 +419,7 @@
     }
 
     &:focus {
-      border-color: rgba($accent, 0.5);
+      border-color: color-mix(in srgb, var(--c-accent) 50%, transparent);
       box-shadow: 0 0 0 3px $accent-soft;
     }
   }
@@ -425,7 +427,7 @@
   .game-rush__submit {
     padding: 14px 28px;
     border-radius: 999px;
-    border: 1px solid rgba($accent, 0.4);
+    border: 1px solid color-mix(in srgb, var(--c-accent) 40%, transparent);
     background: $accent;
     color: #fff;
     font-size: 15px;
@@ -509,7 +511,8 @@
   background: $card-bg;
   cursor: pointer;
   box-shadow: $shadow-sm;
-  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease,
+    box-shadow 0.2s ease;
 
   &:hover:not(:disabled) {
     transform: translateY(-2px);
@@ -547,7 +550,7 @@
   }
 
   &.is-flipped {
-    border-color: rgba($accent, 0.4);
+    border-color: color-mix(in srgb, var(--c-accent) 40%, transparent);
 
     .game-memory-card__face--back {
       opacity: 0;
@@ -558,7 +561,7 @@
   }
 
   &.is-matched {
-    border-color: rgba($success, 0.45);
+    border-color: color-mix(in srgb, var(--c-success) 45%, transparent);
 
     .game-memory-card__face--front {
       background: $success-soft;

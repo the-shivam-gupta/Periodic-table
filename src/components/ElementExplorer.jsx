@@ -15,7 +15,15 @@ import MoleculeVisualization from "./MoleculeVisualization";
 import useScrollLock from "../hooks/useScrollLock";
 import { animateDrawerIn, animateDrawerOut } from "../animations/modalAnimations";
 import { prefersReducedMotion } from "../animations/usePrefersReducedMotion";
-import { categoryColors, categoryText, darkenRgbForText, titleCategory } from "../data/categories";
+import { useTheme } from "../theme/ThemeContext";
+import {
+  themeFillColor,
+  themedCategoryColors,
+  themedCategoryText,
+  darkenRgbForText,
+  lightenRgbForText,
+  titleCategory,
+} from "../data/categories";
 import {
   formatSig,
   getPropertyConfig,
@@ -23,6 +31,8 @@ import {
   isMissingValueFor,
   propertyValue,
   stopsGradient,
+  STOPS,
+  DARK_STOPS,
 } from "../data/propertyScale";
 import { ELEMENTS } from "../data/elements";
 import { moleculesContaining } from "../data/molecules";
@@ -88,6 +98,7 @@ const TABS = [
 ];
 
 export default function ElementExplorer({ element, onClose, accentColor, propertyKey, missing = false }) {
+  const { theme, isDark } = useTheme();
   const rootRef = useRef(null);
   const figureBodyRef = useRef(null);
   const bodyRef = useRef(null);
@@ -97,7 +108,7 @@ export default function ElementExplorer({ element, onClose, accentColor, propert
   const [tab, setTab] = useState("overview");
   const [favorites, setFavorites] = useState(readFavorites);
   const [shared, setShared] = useState(false);
-  const [from, to] = categoryColors(element.category);
+  const [from, to] = themedCategoryColors(element.category, theme);
   // When a "Color by" property is active, the symbol, the card wash, the top
   // accent line and the category chip all follow that property's color for
   // this element (matching the hover preview card) instead of always falling
@@ -105,25 +116,24 @@ export default function ElementExplorer({ element, onClose, accentColor, propert
   // Color-by is on looks like it reset to "None". There's only one solid
   // color from a heat property (not a two-stop pair like the category
   // gradients), so it stands in for both `from` and `to` wherever a gradient
-  // needs two stops.
-  const symbolColor = accentColor || from;
-  const symbolColorTo = accentColor || to;
-  // The symbol's own text needs to stay readable against its pastel fill, so
-  // — unlike symbolColor/symbolColorTo above, which paint the light
-  // background — it always resolves to a dark, saturated shade: the
-  // category's own dark text color by default, or a darkened version of the
-  // exact "Color by" accent so it still matches whatever the cell is
-  // currently showing (mirrors how .el-symbol gets its color in Element.jsx).
-  // `missing` (this element has no value for the active "Color by" property)
-  // overrides all of that to null/none, matching the grid cell's own
-  // transparent "missing" treatment instead of quietly falling back to the
-  // plain category color — otherwise the explorer looks colored-in for an
-  // element the table itself shows as having no data for that property.
+  // needs two stops. `accentColor` arrives as the light pastel "source hue";
+  // in dark mode it's mapped onto the mid-dark fill like the grid cells do.
+  const symbolColor = accentColor ? themeFillColor(accentColor, theme) : from;
+  const symbolColorTo = accentColor ? themeFillColor(accentColor, theme) : to;
+  // The symbol's own text needs to stay readable against its fill, so —
+  // unlike symbolColor/symbolColorTo above, which paint the background — it
+  // always resolves to a readable tint: the category's own dark/light text
+  // color by default, or a tinted version of the exact "Color by" accent so
+  // it still matches whatever the cell is currently showing (mirrors how
+  // .el-symbol gets its color in Element.jsx). `missing` overrides all of
+  // that, matching the grid cell's own transparent "missing" treatment.
   const symbolTextColor = missing
-    ? null
+    ? "var(--c-text-muted)"
     : accentColor
-      ? darkenRgbForText(accentColor) || categoryText(element.category)
-      : categoryText(element.category);
+      ? isDark
+        ? lightenRgbForText(accentColor) || themedCategoryText(element.category, theme)
+        : darkenRgbForText(accentColor) || themedCategoryText(element.category, theme)
+      : themedCategoryText(element.category, theme);
   const relatedMolecules = useMemo(
     () => moleculesContaining(element.symbol),
     [element.symbol]
@@ -281,7 +291,7 @@ export default function ElementExplorer({ element, onClose, accentColor, propert
           missing
             ? undefined
             : {
-                background: `linear-gradient(180deg, color-mix(in srgb, ${symbolColor} 16%, transparent) 0%, color-mix(in srgb, ${symbolColor} 6%, transparent) 40%, transparent 100%), #ffffff`,
+                background: `linear-gradient(180deg, color-mix(in srgb, ${symbolColor} 16%, transparent) 0%, color-mix(in srgb, ${symbolColor} 6%, transparent) 40%, transparent 100%), var(--c-card-bg)`,
               }
         }
       >
@@ -513,7 +523,7 @@ export default function ElementExplorer({ element, onClose, accentColor, propert
                     </p>
                     <div className="explorer-viz">
                       <span className="explorer-viz__end">Low</span>
-                      <span className="explorer-viz__bar" style={{ background: stopsGradient(90) }}>
+                      <span className="explorer-viz__bar" style={{ background: stopsGradient(90, isDark ? DARK_STOPS : STOPS) }}>
                         <span className="explorer-viz__marker" style={{ left: `${vizPct}%` }} />
                       </span>
                       <span className="explorer-viz__end">High</span>

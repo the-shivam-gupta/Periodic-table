@@ -50,6 +50,9 @@
   padding: $panel-pad;
   border-radius: 16px;
   box-shadow: $shadow-md;
+  // --c-shadow-md is an unregistered <shadow> value so it would snap without
+  // an explicit transition on the surface that consumes it.
+  transition: box-shadow 350ms ease;
 }
 
 .table-panel-lan {
@@ -149,24 +152,35 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  // Tinted to match whatever color the cell text is showing (--el-text, set
-  // inline per cell) instead of a flat neutral border — falls back to the
-  // neutral tint for cells with no color (e.g. a missing heat value).
-  border: 1px solid color-mix(in srgb, var(--el-text, #{rgba(15, 23, 42, 0.65)}) 22%, transparent);
+  // --cat-from/--cat-to come from the .el-<category> classes (light) or the
+  // [data-theme="dark"] override; --el-text is set inline per cell. Both are
+  // registered <color> properties so a theme switch crossfades the category
+  // gradients and cell text instead of snapping.
+  background: linear-gradient(110deg, var(--cat-from), var(--cat-to));
+  border: 1px solid color-mix(in srgb, var(--el-text) 22%, transparent);
   border-radius: $border-radius;
   cursor: pointer;
   z-index: 0;
   box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
   will-change: transform;
   font-family: $font-body;
+  // --el-text is applied inline (Element.jsx) and can change when the active
+  // property or theme changes — let it crossfade along with the fill.
+  transition: --el-text 350ms ease;
 
   .el-heat {
     position: absolute;
     inset: 0;
     z-index: -1;
     border-radius: inherit;
+    background: linear-gradient(110deg, var(--heat-from), var(--heat-to));
     opacity: 0;
     pointer-events: none;
+    // Heat gradient endpoints are driven from JS (Element.jsx) and recalled on
+    // a theme switch — register-level transition so they crossfade too.
+    transition:
+      --heat-from 350ms ease,
+      --heat-to 350ms ease;
   }
 
   .el-number {

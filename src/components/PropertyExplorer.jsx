@@ -2,6 +2,8 @@ import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { FiBookOpen } from "react-icons/fi";
 import { ELEMENTS } from "../data/elements";
+import { useTheme } from "../theme/ThemeContext";
+import { themeFillColor } from "../data/categories";
 import {
   PROPERTIES,
   buildScale,
@@ -10,6 +12,8 @@ import {
   formatSig,
   stopsGradient,
   heatGradientStops,
+  STOPS,
+  DARK_STOPS,
 } from "../data/propertyScale";
 import { prefersReducedMotion } from "../animations/usePrefersReducedMotion";
 import PeriodicTable from "./PeriodicTable";
@@ -35,6 +39,7 @@ const PROPERTY_INFO = {
 // Properties — pick a property from the sidebar, read what it means, and see
 // it visualized across the same periodic table used on the Table view.
 export default function PropertyExplorer({ onOpen }) {
+  const { theme, isDark } = useTheme();
   const [explorerKey, setExplorerKey] = useState("atomicMass");
   const outerRef = useRef(null);
   const innerRef = useRef(null);
@@ -52,8 +57,10 @@ export default function PropertyExplorer({ onOpen }) {
     if (!c) return null;
     // Two distinct lightness stops of the same hue — matching how each
     // category's own two-stop gradient reads, instead of the same color
-    // twice (which shows no gradient sheen at all).
-    const [from, to] = heatGradientStops(c);
+    // twice (which shows no gradient sheen at all). The pastel heat color
+    // is mapped onto the active theme first (mid-dark in dark mode).
+    const themed = themeFillColor(c, theme);
+    const [from, to] = heatGradientStops(themed, theme);
     return `linear-gradient(110deg, ${from}, ${to})`;
   };
   const explorerHeatBadge = (el) => {
@@ -147,7 +154,7 @@ export default function PropertyExplorer({ onOpen }) {
                 <span className="property-content__min">
                   {formatSig(explorerScale.min, 4)} {explorerCfg.unit}
                 </span>
-                <span className="property-content__bar" style={{ background: stopsGradient(90) }} />
+                <span className="property-content__bar" style={{ background: stopsGradient(90, isDark ? DARK_STOPS : STOPS) }} />
                 <span className="property-content__max">
                   {formatSig(explorerScale.max, 4)} {explorerCfg.unit}
                 </span>
@@ -171,7 +178,7 @@ export default function PropertyExplorer({ onOpen }) {
                     <span className="property-content__swatch-item" key={v.value}>
                       <span
                         className="property-content__swatch"
-                        style={{ background: v.color }}
+                        style={{ background: themeFillColor(v.color, theme) }}
                         aria-hidden="true"
                       />
                       {v.value}

@@ -106,12 +106,17 @@ $breakpoints: (
 }
 
 // --- Periodic-table specific ---
-// Generates `.el-<name>` classes with a gradient from each `[from, to]`
-// color pair in the $gradients map.
+// Generates `.el-<name>` classes that expose each category's gradient as the
+// `--cat-from` / `--cat-to` custom properties (registered + interpolatable).
+// The actual `background: linear-gradient(...)` is applied once in a shared
+// summary rule (see components/_categories.scss) so a theme switch only has to
+// change these variables on [data-theme="dark"] — the cells' visual colours
+// then crossfade instead of snapping.
 @mixin category-gradients($map: $gradients) {
   @each $name, $colors in $map {
     .el-#{$name} {
-      background: linear-gradient(110deg, nth($colors, 1), nth($colors, 2));
+      --cat-from: #{nth($colors, 1)};
+      --cat-to: #{nth($colors, 2)};
     }
   }
 }

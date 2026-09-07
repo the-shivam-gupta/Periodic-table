@@ -5,9 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f3f5f8" />
     <link rel="icon" type="image/svg+xml" href="%PUBLIC_URL%/favicon.svg" />
+    <!-- Apply the saved theme before first paint so there's no flash of the
+         wrong background — this must stay in sync with ThemeContext.js
+         (storage key + theme-color values). -->
+    <script>
+      (function () {
+        var theme = "light";
+        try {
+          theme = window.localStorage.getItem("pt-theme") || "light";
+        } catch (e) {}
+        var dark = theme === "dark";
+        if (dark) document.documentElement.setAttribute("data-theme", "dark");
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", dark ? "#0e1420" : "#f3f5f8");
+      })();
+    </script>
     <meta
       name="description"
-      content="A modern, interactive chemistry learning platform — explore, search, filter and learn all 118 elements of the periodic table."
+      content="Explore all 118 elements with an interactive periodic table, detailed properties, applications, electron configurations, molecular structures, and educational games."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -15,7 +30,7 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap"
       rel="stylesheet"
     />
-    <title>Periodic Table of Elements — Interactive</title>
+    <title>Periodic Table | Explore Elements, Properties & Uses</title>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

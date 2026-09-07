@@ -97,8 +97,21 @@ const PropertyShowcase = memo(function PropertyShowcase({
 
   if (!element) return null;
 
-  const tileStyle = { ...(missing || !color ? {} : { background: color }) };
-  if (textColor) tileStyle["--el-text"] = textColor;
+  // `color` is now a { from, to, angle } object (App.js builds it from the
+  // theme-aware category/heat colors). The gradient is painted via the
+  // --sc-from/--sc-to custom properties (registered & interpolatable) so a
+  // theme switch crossfades the tile instead of snapping. --el-text is
+  // ALWAYS set so the tile borders/labels stay right in both themes.
+  const tileStyle = {
+    ...(missing || !color
+      ? {}
+      : {
+          "--sc-from": color.from,
+          "--sc-to": color.to,
+          background: `linear-gradient(${color.angle}deg, var(--sc-from), var(--sc-to))`,
+        }),
+    "--el-text": textColor || "var(--c-text-muted)",
+  };
 
   return (
     <div

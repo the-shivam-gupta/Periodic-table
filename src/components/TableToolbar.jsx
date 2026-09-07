@@ -10,7 +10,8 @@ import {
   FiSearch,
   FiX,
 } from "react-icons/fi";
-import { FILTER_COLORS, DEFAULT_COLOR } from "../data/categories";
+import { themedCategoryColors } from "../data/categories";
+import { useTheme } from "../theme/ThemeContext";
 import useScrollLock from "../hooks/useScrollLock";
 import { PROPERTIES, getPropertyConfig } from "../data/propertyScale";
 import { openPopover, closePopover, positionPopover } from "../animations/toolbarAnimations";
@@ -41,6 +42,7 @@ export default function TableToolbar({
   reduceMotion,
   onToggleReduceMotion,
 }) {
+  const { theme } = useTheme();
   const [open, setOpen] = useState(null);
   const [filterQuery, setFilterQuery] = useState("");
 
@@ -190,7 +192,9 @@ export default function TableToolbar({
   const renderCatItem = (key, label, count) => {
     const active = activeCategory === key;
     const hasSwatch = key !== null;
-    const [from, to] = hasSwatch ? FILTER_COLORS[key] || DEFAULT_COLOR : [null, null];
+    const [from, to] = hasSwatch
+      ? themedCategoryColors(key.replace(/-/g, " "), theme)
+      : [null, null];
     return (
       <button
         key={key ?? "all"}
