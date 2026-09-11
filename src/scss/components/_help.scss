@@ -6,10 +6,18 @@
 // only add the help-specific content styling.
 .help-card {
   max-width: 640px;
+  // .detail-card scrolls itself (overflow-y: auto) with rounded corners —
+  // on this modal that lets the native scrollbar's square track poke past
+  // the rounded top/bottom-right corners. Clip the card instead and let
+  // .help-body scroll internally, inheriting the corner radius cleanly.
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .help-header {
   padding: 32px 32px 8px;
+  flex-shrink: 0;
 }
 
 .help-eyebrow {
@@ -41,6 +49,8 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .help-section {

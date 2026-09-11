@@ -65,6 +65,25 @@ function Fact({ label, empty, children }) {
   );
 }
 
+function formatElectronConfig(config) {
+  if (!config) return config;
+  const nodes = [];
+  const orbitalPattern = /(\d+[a-z]+)(\d+)/gi;
+  let lastIndex = 0;
+  let match;
+  let key = 0;
+
+  while ((match = orbitalPattern.exec(config)) !== null) {
+    if (match.index > lastIndex) nodes.push(config.slice(lastIndex, match.index));
+    nodes.push(match[1]);
+    nodes.push(<sup key={key++}>{match[2]}</sup>);
+    lastIndex = orbitalPattern.lastIndex;
+  }
+  if (lastIndex < config.length) nodes.push(config.slice(lastIndex));
+
+  return nodes;
+}
+
 function QuickBadge({ label, value }) {
   if (!has(value)) return null;
   return (
@@ -562,11 +581,13 @@ export default function ElementExplorer({ element, onClose, accentColor, propert
                   <SectionTitle icon={FiZap}>Atomic Properties</SectionTitle>
                   <div className="fact-grid">
                     <Fact label="Electron Config" empty={!has(element.electronConfiguration)}>
-                      {element.electronConfiguration || "Not available"}
+                      {has(element.electronConfiguration)
+                        ? formatElectronConfig(element.electronConfiguration)
+                        : "Not available"}
                     </Fact>
                     {element.electronConfigurationSemantic !== element.electronConfiguration &&
                       has(element.electronConfigurationSemantic) && (
-                        <Fact label="Short Form">{element.electronConfigurationSemantic}</Fact>
+                        <Fact label="Short Form">{formatElectronConfig(element.electronConfigurationSemantic)}</Fact>
                       )}
                     <Fact label="Shells" empty={!hasShells}>
                       {hasShells ? element.shells.join(" · ") : "Not available"}

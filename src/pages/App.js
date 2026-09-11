@@ -7,6 +7,7 @@ import React, {
   useState,
 } from "react";
 import gsap from "gsap";
+import { useLocation, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import HelpModal from "../components/HelpModal";
 import TableToolbar from "../components/TableToolbar";
@@ -46,26 +47,40 @@ import {
   heatGradientStops,
 } from "../data/propertyScale";
 
-// "Table" is the interactive grid; "Elements" is the sortable/filterable
-// list; "Properties" is the property explorer; "Molecules" is the
-// structural-diagram gallery; "Games" is the games hub (its cards already
-// cover both quiz-style and match-style games).
 const VIEWS = [
-  { key: "table", label: "Periodic Table" },
-  { key: "elements", label: "Elements" },
-  { key: "properties", label: "Properties" },
-  { key: "molecules", label: "Molecules" },
-  { key: "games", label: "Games" },
+  { key: "table", label: "Periodic Table", path: "/" },
+  { key: "elements", label: "Elements", path: "/elements" },
+  { key: "properties", label: "Properties", path: "/properties" },
+  { key: "molecules", label: "Molecules", path: "/molecules" },
+  { key: "games", label: "Games", path: "/games" },
 ];
 
-// Shown in the center showcase before the user has hovered or opened
-// anything — carbon, a familiar, well-known element — so the showcase never
-// sits empty or shows placeholder text.
+const DEFAULT_VIEW = VIEWS[0];
+const VIEW_BY_PATH = new Map(VIEWS.map((v) => [v.path, v.key]));
+const PATH_BY_VIEW = new Map(VIEWS.map((v) => [v.key, v.path]));
+
+const TITLE_BY_VIEW = {
+  table: "PeriodicTable. — Interactive Periodic Table",
+  elements: "Elements — PeriodicTable.",
+  properties: "Properties — PeriodicTable.",
+  molecules: "Molecules — PeriodicTable.",
+  games: "Games — PeriodicTable.",
+};
+
 const DEFAULT_SHOWCASE_NUMBER = 6;
 
 export default function App() {
   const { theme, isDark } = useTheme();
-  const [view, setView] = useState("table");
+  const location = useLocation();
+  const navigate = useNavigate();
+  const view = VIEW_BY_PATH.get(location.pathname) || DEFAULT_VIEW.key;
+  const setView = useCallback(
+    (key) => {
+      const path = PATH_BY_VIEW.get(key) || DEFAULT_VIEW.path;
+      if (path !== location.pathname) navigate(path);
+    },
+    [navigate, location.pathname]
+  );
   const [selected, setSelected] = useState(null);
   const [activeCategory, setActiveCategory] = useState(null);
   const [hoveredElement, setHoveredElement] = useState(null);
@@ -74,9 +89,6 @@ export default function App() {
   const [showcaseManual, setShowcaseManual] = useState(false);
   const [showNames, setShowNames] = useState(true);
   const [showMass, setShowMass] = useState(true);
-  // Off by default — every cell is already tinted by its category, so a text
-  // badge on every single cell as well just reads as noise. "More > Show
-  // Categories" still lets a user opt into the text labels.
   const [showCategories, setShowCategories] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -85,6 +97,14 @@ export default function App() {
   const previewRef = useRef(null);
   const tableRef = useRef(null);
   const viewPanelRef = useRef(null);
+
+  useEffect(() => {
+    if (!VIEW_BY_PATH.has(location.pathname)) navigate(DEFAULT_VIEW.path, { replace: true });
+  }, [location.pathname, navigate]);
+
+  useEffect(() => {
+    document.title = TITLE_BY_VIEW[view] || TITLE_BY_VIEW[DEFAULT_VIEW.key];
+  }, [view]);
 
   const categoryCounts = useMemo(() => buildCategoryCounts(ELEMENTS), []);
 
@@ -103,11 +123,6 @@ export default function App() {
     [activeCategory]
   );
 
-  // The single solid color a "Color by" property maps an element to — shared
-  // by heatStyleFor (which turns it into the table cell's gradient) and the
-  // hover preview card's glow ring, so both actually agree with each other
-  // instead of the glow staying tied to the plain category color regardless
-  // of which property is selected.
   const heatBaseColor = useCallback(
     (el) => {
       if (!heatScale) return null;
@@ -143,9 +158,6 @@ export default function App() {
     [heatConfig, heatScale, heatKey]
   );
 
-  // Default showcase element: for numeric properties a value-bearing element
-  // near the middle of the current property's range (skewing toward well-known
-  // low-Z elements); for categorical properties simply a value-bearing element.
   const autoShowcase = useMemo(() => {
     if (!heatKey || !heatScale) return null;
     if (heatScale.kind === "categorical") {
@@ -177,9 +189,6 @@ export default function App() {
     }
   }, [heatKey, autoShowcase, showcaseManual]);
 
-  // The element shown in the center. Hover takes priority (transient), then
-  // the user's selected/auto-picked representative element. Nothing shows
-  // until one of those actually happens — no default element on first load.
   const showcaseEl = useMemo(() => {
     if (hoveredElement && hoveredElement.number != null) return hoveredElement;
     if (showcaseNumber != null) {
@@ -190,18 +199,12 @@ export default function App() {
     return NUMBER_MAP.get(DEFAULT_SHOWCASE_NUMBER) || null;
   }, [hoveredElement, showcaseNumber, heatKey, heatScale, autoShowcase]);
 
-  // Heat mode is active whenever a Color by property (numeric OR categorical) is
-  // selected; the category-coloring default (heatKey === null) is not heat mode.
   const heatMode = heatKey !== null && heatScale !== null;
   const isFeatured =
     !!showcaseEl &&
     !!hoveredElement &&
     hoveredElement.number === showcaseEl.number;
 
-  // Bottom value + label + tile color, unified across all modes. In a heat mode
-  // (numeric or categorical) the tile shows the selected property's value; in
-  // the default category mode it shows the element's category name. Atomic mass
-  // is never a colorable property — it shows at the top-right of every cell.
   const showcasePropValue = showcaseEl
     ? heatMode
       ? propertyValue(showcaseEl, heatKey)
@@ -241,12 +244,6 @@ export default function App() {
       : ""
     : "Category";
 
-  // Cell text in the grid is tinted a shade of whatever color it's actually
-  // showing (see Element.jsx); the showcase tile matches that — the
-  // category's hue by default, or a shade of the exact heat color once a
-  // "Color by" property is active — instead of falling back to flat black
-  // just because a property replaced the category color. Dark theme uses the
-  // light tint variant so text holds contrast on the mid-dark fills.
   const showcaseTextColor = !showcaseEl
     ? null
     : heatMode
@@ -393,20 +390,8 @@ export default function App() {
     document.documentElement.classList.toggle("force-reduced-motion", reduceMotion);
   }, [reduceMotion]);
 
-  // Keep the table scrolled to its start when switching views or layouts —
-  // except on mobile, where the table is wide enough to need horizontal
-  // scroll no matter what: starting pinned to the far-left edge (element 1)
-  // makes it hard to tell there's a whole table to the right, so the first
-  // time it's shown there we center the scroll instead. Only once, though —
-  // re-centering on every return trip to this tab would fight whatever
-  // position the user had scrolled to themselves.
   const hasCenteredMobileTableRef = useRef(false);
-  // Baseline scrollLeft set by the auto-center below, so the scroll handler
-  // can tell "that was just us centering it" apart from an actual user
-  // swipe — setting `.scrollLeft` fires a real scroll event too.
   const tableBaselineScrollRef = useRef(null);
-  // "Swipe to explore" hint on mobile — shown until the user actually
-  // scrolls the table themselves.
   const [tableSwiped, setTableSwiped] = useState(false);
 
   useEffect(() => {
@@ -466,13 +451,6 @@ export default function App() {
           {view === "table" && (
             <div className="view-entrance">
               <section className="table-section">
-                {/* Mobile-only: a real second render of the showcase, sitting
-                    OUTSIDE the horizontally-scrolling table so it stays put
-                    regardless of scroll position — the in-grid instance below
-                    is anchored to a fixed spot *within* the scrollable content
-                    itself, so it drifts out of view as soon as the table is
-                    scrolled (it's hidden via CSS at this width instead). Same
-                    `centerNode` element, mounted independently here. */}
                 {centerNode && <div className="table-center-mobile">{centerNode}</div>}
 
                 {!tableSwiped && (
